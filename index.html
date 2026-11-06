@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Retro Endless Runner with Savings Track</title>
+    <title>Retro Endless Runner</title>
     <style>
         body {
             margin: 0;
@@ -53,66 +53,37 @@
     const GROUND_Y = canvas.height - 60;
     const GRAVITY = 0.6;
 
-    // ===================================================
-    // PERSISTENT LOCAL STORAGE (HIGH SCORE TRACKING)
-    // ===================================================
-    // Attempt to pull any previously saved records out of browser storage
+    // Persistent High Score System via Browser LocalStorage
     let highScore = localStorage.getItem("runner_highscore") ? parseFloat(localStorage.getItem("runner_highscore")) : 0;
 
-    // ===================================================
-    // IMAGE ASSET LOADING SYSTEM (LINK YOUR 4 GRAPHICS HERE)
-    // ===================================================
-    // To make these load, replace the names inside quotes with your exact filenames!
-    
-    const imgPlayerRun1 = new Image();
-    imgPlayerRun1.src = "player_run1.png"; // Change to your first player image name
-
-    const imgPlayerRun2 = new Image();
-    imgPlayerRun2.src = "player_run2.png"; // Change to your second player image name (for running animation)
+    // ==========================================================
+    // EXACT FILENAME MATCHING FROM YOUR GITHUB REPOSITORY
+    // ==========================================================
+    const imgPlayer = new Image();
+    imgPlayer.src = "./hero.png"; 
 
     const imgObstacle = new Image();
-    imgObstacle.src = "obstacle.png";       // Change to your obstacle image name
+    imgObstacle.src = "./obstacle.png";       
 
-    const imgBackground = new Image();
-    imgBackground.src = "background.png";   // Change to your environment background image name
+    const imgCoin = new Image();
+    imgCoin.src = "./coin.png";   
 
-    // Helper logic to verify if your image assets successfully found their path
-    let assetsLoaded = false;
-    let loadedCount = 0;
-    const totalAssets = 4;
-    
-    function onAssetLoad() {
-        loadedCount++;
-        if (loadedCount === totalAssets) {
-            assetsLoaded = true;
-        }
-    }
-    
-    imgPlayerRun1.onload = onAssetLoad;
-    imgPlayerRun2.onload = onAssetLoad;
-    imgObstacle.onload = onAssetLoad;
-    imgBackground.onload = onAssetLoad;
-
-    // Background horizontal scroll position variable
-    let bgScrollX = 0;
+    const imgItem = new Image();
+    imgItem.src = "./item.png";
 
     // ==========================================
-    // PLAYER CONFIGURATION & ANIMATION LOGIC
+    // PLAYER CONFIGURATION
     // ==========================================
     const player = {
         x: 80,
-        y: GROUND_Y - 50,
-        width: 45,
-        height: 55,
+        y: GROUND_Y - 60,
+        width: 50,  // Proportional box size for image rendering
+        height: 60,
         velocityY: 0,
-        jumpForce: -12,
+        jumpForce: -13,
         isGrounded: false,
         jumpCount: 0,
         maxJumps: 2,
-        
-        // Frame pacing for running animation loop
-        animTimer: 0,
-        currentFrame: 1,
 
         update() {
             this.velocityY += GRAVITY;
@@ -123,45 +94,19 @@
                 this.velocityY = 0;
                 this.isGrounded = true;
                 this.jumpCount = 0;
-                
-                // Track pacing ticks to swap legs while moving forward
-                this.animTimer += gameSpeed * 0.05;
-                if (this.animTimer > 1) {
-                    this.currentFrame = this.currentFrame === 1 ? 2 : 1;
-                    this.animTimer = 0;
-                }
             } else {
                 this.isGrounded = false;
             }
         },
 
         draw() {
-            // Determine active custom image texture based on animation ticks
-            let activeSprite = this.currentFrame === 1 ? imgPlayerRun1 : imgPlayerRun2;
-
-            // If browser found your files, render them. If not, use the fallback shape.
-            if (assetsLoaded && activeSprite.complete && activeSprite.naturalWidth !== 0) {
-                ctx.drawImage(activeSprite, this.x, this.y, this.width, this.height);
+            if (imgPlayer.complete && imgPlayer.naturalWidth !== 0) {
+                ctx.drawImage(imgPlayer, this.x, this.y, this.width, this.height);
             } else {
+                // Vector fallback box visible if assets fail to link
                 ctx.fillStyle = "#3498db"; 
                 ctx.fillRect(this.x, this.y, this.width, this.height);
-                ctx.fillStyle = "#ffffff";
-                ctx.fillRect(this.x + 28, this.y + 10, 10, 8);
             }
-        },
-
-        jump() {
-            if (this.isGrounded || this.jumpCount < this.maxJumps) {
-                this.velocityY = this.jumpForce;
-                this.jumpCount++;
-            }
-        },
-
-        reset() {
-            this.y = GROUND_Y - this.height;
-            this.velocityY = 0;
-            this.isGrounded = true;
-            this.jumpCount = 0;
         }
     };
 
@@ -170,13 +115,13 @@
     // ==========================================
     let obstacles = [];
     let spawnTimer = 0;
-    let minSpawnInterval = 60; 
-    let maxSpawnInterval = 150; 
+    let minSpawnInterval = 70; 
+    let maxSpawnInterval = 160; 
 
     class Obstacle {
         constructor() {
-            this.width = 35;
-            this.height = 45;
+            this.width = 40;
+            this.height = 50;
             this.x = canvas.width + 20;            
             this.y = GROUND_Y - this.height;
         }
@@ -186,7 +131,7 @@
         }
 
         draw() {
-            if (assetsLoaded && imgObstacle.complete && imgObstacle.naturalWidth !== 0) {
+            if (imgObstacle.complete && imgObstacle.naturalWidth !== 0) {
                 ctx.drawImage(imgObstacle, this.x, this.y, this.width, this.height);
             } else {
                 ctx.fillStyle = "#e74c3c"; 
@@ -201,14 +146,14 @@
         
         if (spawnTimer <= 0) {
             obstacles.push(new Obstacle());
-            spawnTimer = dynamicInterval + (Math.random() * 50);
+            spawnTimer = dynamicInterval + (Math.random() * 60);
         }
 
         for (let i = obstacles.length - 1; i >= 0; i--) {
             obstacles[i].update();
             obstacles[i].draw();
 
-            // Strict Collision AABB Check
+            // Collision Processing
             if (
                 player.x < obstacles[i].x + obstacles[i].width &&
                 player.x + player.width > obstacles[i].x &&
@@ -225,7 +170,6 @@
         }
     }
 
-    // High Score Processing Local Registry Engine
     function handleHighScore() {
         if (score > highScore) {
             highScore = score;
@@ -234,29 +178,26 @@
     }
 
     // ==========================================
-    // ENVIRONMENT SCROLL & RENDER
+    // ENVIRONMENT SCENERY RENDERING
     // ==========================================
     function drawBackground() {
-        if (assetsLoaded && imgBackground.complete && imgBackground.naturalWidth !== 0) {
-            if (gameState === "PLAYING") {
-                bgScrollX -= gameSpeed * 0.5; // Scroll background layer slower for depth
-            }
-            if (bgScrollX <= -canvas.width) {
-                bgScrollX = 0;
-            }
-            // Seamless looping texture technique
-            ctx.drawImage(imgBackground, bgScrollX, 0, canvas.width, canvas.height);
-            ctx.drawImage(imgBackground, bgScrollX + canvas.width, 0, canvas.width, canvas.height);
-        } else {
-            // Sky standard clear fallback
-            ctx.fillStyle = "#2c3e50";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // Since background.png doesn't exist, we render a stylized retro sky grid background
+        ctx.fillStyle = "#1e272e";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Subtle geometric sky stars/details
+        ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
+        for (let i = 0; i < canvas.width; i += 80) {
+            ctx.fillRect(i + 20, 50, 4, 4);
+            ctx.fillRect(i + 60, 150, 2, 2);
         }
 
-        // Standard clean flat collision ground overlay deck
-        ctx.fillStyle = "#34495e";
+        // Base ground floor layer platform deck
+        ctx.fillStyle = "#2d3436";
         ctx.fillRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
-        ctx.fillStyle = "#2ecc71"; 
+        
+        // High contrast ground floor separating line stripe
+        ctx.fillStyle = "#00d2d3"; 
         ctx.fillRect(0, GROUND_Y, canvas.width, 6);
     }
 
@@ -266,13 +207,13 @@
         ctx.textAlign = "left";
         ctx.fillText(`SCORE: ${Math.floor(score)}`, 20, 35);
         
-        ctx.fillStyle = "#f1c40f"; // Gold text for highscore distinction
+        ctx.fillStyle = "#f1c40f"; 
         ctx.textAlign = "right";
         ctx.fillText(`HI-SCORE: ${Math.floor(highScore)}`, canvas.width - 20, 35);
     }
 
     function drawGameOverScreen() {
-        ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+        ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         ctx.fillStyle = "#e74c3c";
@@ -289,6 +230,68 @@
 
         ctx.fillStyle = "#bdc3c7";
         ctx.font = "15px 'Segoe UI', sans-serif";
-        ctx.fillText("Press [SPACEBAR] or CLICK SCREEN to Try Again", canvas.width / 2, canvas.height / 2 + 95);
+        ctx.fillText("Press [SPACEBAR] or CLICK HERE to Try Again", canvas.width / 2, canvas.height / 2 + 95);
     }
 
+    // ==========================================
+    // INPUT ENGINES
+    // ==========================================
+    function triggerAction() {
+        if (gameState === "PLAYING") {
+            player.jump();
+        } else if (gameState === "GAMEOVER") {
+            resetGame();
+        }
+    }
+
+    window.addEventListener("keydown", (e) => {
+        if (e.code === "Space") {
+            e.preventDefault();
+            triggerAction();
+        }
+    });
+
+    canvas.addEventListener("mousedown", (e) => {
+        if (e.button === 0) triggerAction();
+    });
+    canvas.addEventListener("touchstart", (e) => {
+        e.preventDefault();
+        triggerAction();
+    });
+
+    function resetGame() {
+        obstacles = [];
+        score = 0;
+        gameSpeed = 5;
+        spawnTimer = 0;
+        player.reset();
+        gameState = "PLAYING";
+    }
+
+    function gameLoop() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawBackground();
+
+        if (gameState === "PLAYING") {
+            if (gameSpeed < MAX_SPEED) gameSpeed += SPEED_INCREMENT;
+            player.update();
+            score += 0.15;
+
+            player.draw();
+            manageObstacles();
+            drawUI();
+        } else if (gameState === "GAMEOVER") {
+            player.draw();
+            for (let obs of obstacles) obs.draw();
+            drawUI();
+            drawGameOverScreen();
+        }
+
+        requestAnimationFrame(gameLoop);
+    }
+
+    gameLoop();
+</script>
+
+</body>
+</html>
