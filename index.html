@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Retro Endless Runner - Ultimate Master Edition</title>
+    <title>Retro Endless Runner - Fail Safe Build</title>
     <style>
         body {
             margin: 0;
@@ -45,18 +45,16 @@
     // ==========================================
     // EXTENSIVE STATE TRACKING MATRIX
     // ==========================================
-    let gameState = "MENU"; // States: "MENU", "PLAYING", "GAMEOVER"
-    let selectedDifficulty = 1; // 0 = Easy, 1 = Medium, 2 = Hard
+    let gameState = "MENU"; 
+    let selectedDifficulty = 1; 
     let score = 0;
     let gameSpeed = 5;
     let maxSpeedSetting = 15;
     let speedIncrementSetting = 0.001;
 
-    // Environmental constants
     const GROUND_Y = canvas.height - 60;
     const GRAVITY = 0.6;
 
-    // Visual tracking arrays
     let scorePopups = [];
     let particles = [];
 
@@ -139,18 +137,27 @@
     }
 
     // ==========================================================
-    // REPOSITORY IMAGE LOADER MAPS
+    // REPOSITORY IMAGE PATHS WITH LOAD DETECTION VERIFICATION
     // ==========================================================
+    let heroLoaded = false;
+    let obstacleLoaded = false;
+    let coinLoaded = false;
+    let itemLoaded = false;
+
     const imgPlayer = new Image();
+    imgPlayer.onload = () => { heroLoaded = true; };
     imgPlayer.src = "./hero.png"; 
 
     const imgObstacle = new Image();
+    imgObstacle.onload = () => { obstacleLoaded = true; };
     imgObstacle.src = "./obstacle.png";       
 
     const imgCoin = new Image();
+    imgCoin.onload = () => { coinLoaded = true; };
     imgCoin.src = "./coin.png";   
 
     const imgItem = new Image();
+    imgItem.onload = () => { itemLoaded = true; };
     imgItem.src = "./item.png";
 
     // ==========================================
@@ -182,10 +189,11 @@
         },
 
         draw() {
-            if (imgPlayer.complete && imgPlayer.naturalWidth !== 0) {
+            if (heroLoaded && imgPlayer.complete && imgPlayer.naturalWidth > 0) {
                 ctx.drawImage(imgPlayer, this.x, this.y, this.width, this.height);
             } else {
-                ctx.fillStyle = "#3498db"; 
+                // Fail-safe block: Draws a bright cyan block if hero.png isn't available
+                ctx.fillStyle = "#00d2d3"; 
                 ctx.fillRect(this.x, this.y, this.width, this.height);
             }
         },
@@ -219,10 +227,11 @@
         }
 
         draw() {
-            if (imgObstacle.complete && imgObstacle.naturalWidth !== 0) {
+            if (obstacleLoaded && imgObstacle.complete && imgObstacle.naturalWidth > 0) {
                 ctx.drawImage(imgObstacle, this.x, this.y, this.width, this.height);
             } else {
-                ctx.fillStyle = "#e74c3c"; 
+                // Fail-safe block: Draws a crimson orange hazard box if image path breaks
+                ctx.fillStyle = "#ff6b6b"; 
                 ctx.fillRect(this.x, this.y, this.width, this.height);
             }
         }
@@ -248,20 +257,30 @@
         }
 
         draw() {
-            let activeImg = this.type === "COIN" ? imgCoin : imgItem;
-            if (activeImg.complete && activeImg.naturalWidth !== 0) {
-                ctx.drawImage(activeImg, this.x, this.y, this.width, this.height);
+            if (this.type === "COIN") {
+                if (coinLoaded && imgCoin.complete && imgCoin.naturalWidth > 0) {
+                    ctx.drawImage(imgCoin, this.x, this.y, this.width, this.height);
+                } else {
+                    ctx.fillStyle = "#f1c40f"; // Gold circle fail-safe
+                    ctx.beginPath();
+                    ctx.arc(this.x + this.width/2, this.y + this.height/2, this.width/2, 0, Math.PI*2);
+                    ctx.fill();
+                }
             } else {
-                ctx.fillStyle = this.type === "COIN" ? "#f1c40f" : "#9b59b6";
-                ctx.beginPath();
-                ctx.arc(this.x + this.width/2, this.y + this.height/2, this.width/2, 0, Math.PI*2);
-                ctx.fill();
+                if (itemLoaded && imgItem.complete && imgItem.naturalWidth > 0) {
+                    ctx.drawImage(imgItem, this.x, this.y, this.width, this.height);
+                } else {
+                    ctx.fillStyle = "#9b59b6"; // Purple circle fail-safe
+                    ctx.beginPath();
+                    ctx.arc(this.x + this.width/2, this.y + this.height/2, this.width/2, 0, Math.PI*2);
+                    ctx.fill();
+                }
             }
         }
     }
 
     // ==========================================
-    // ENHANCED PARTICLE SYSTEM ENGINE
+    // PARTICLE ENGINE EXTRACTIONS
     // ==========================================
     class Particle {
         constructor(x, y, color) {
@@ -279,31 +298,3 @@
             this.x += this.vx;
             this.y += this.vy;
             this.vy += 0.1; 
-            this.alpha -= this.decay;
-        }
-
-        draw() {
-            ctx.save();
-            ctx.globalAlpha = this.alpha;
-            ctx.fillStyle = this.color;
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.restore();
-        }
-    }
-
-    function createParticleBurst(x, y, color) {
-        for (let i = 0; i < 15; i++) {
-            particles.push(new Particle(x, y, color));
-        }
-    }
-
-    // ==========================================
-    // CORE SCENE RUNTIME UPDATE LOOPS
-    // ==========================================
-    function manageEntities() {
-        // --- 1. Handle Obstacles ---
-        spawnTimer--;
-        let dynamicInterval = maxSpawnInterval - ((gameSpeed / maxSpeedSetting) * (maxSpawnInterval - minSpawnInterval));
-        if (spawnTimer <= 0) {
