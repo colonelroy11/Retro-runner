@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Retro Runner - Absolute Final Build</title>
+    <title>Retro Runner - Universal Mobile Port</title>
     <style>
         * {
             box-sizing: border-box;
@@ -15,28 +15,14 @@
             padding: 0;
             background-color: #111416;
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             color: #ffffff;
-            font-family: 'Segoe UI', Arial, sans-serif;
+            font-family: Arial, sans-serif;
             overflow: hidden;
             user-select: none;
             touch-action: none;
-        }
-
-        #diagnosticBanner {
-            background-color: #f39c12;
-            color: #111416;
-            padding: 8px 16px;
-            font-weight: bold;
-            border-radius: 4px;
-            margin-bottom: 15px;
-            font-size: 14px;
-            text-align: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            z-index: 20;
         }
 
         #gameContainer {
@@ -45,112 +31,41 @@
             border: 2px solid #00d2d3;
             border-radius: 8px;
             overflow: hidden;
+            /* DYNAMIC FLUID VERTICAL LAYOUT ADJUSTMENT */
             width: 95vw;
-            height: 80vh; 
-            max-width: 800px;
-            max-height: 400px;
-            background-color: #1e272e;
+            height: 90vh;
+            max-width: 450px; /* Locked to vertical mobile dimensions */
+            max-height: 800px;
         }
 
         canvas {
             display: block;
             width: 100%;
             height: 100%;
-        }
-
-        /* HTML Overlay Menu Layer UI rules */
-        #menuLayer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(17, 20, 22, 0.95);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 5;
-            padding: 20px;
-        }
-
-        #menuTitle {
-            color: #00d2d3;
-            font-size: clamp(28px, 6vw, 42px);
-            font-weight: bold;
-            margin: 0 0 10px 0;
-            text-shadow: 0 0 10px rgba(0,210,211,0.3);
-        }
-
-        #menuStats {
-            color: #f1c40f;
-            font-size: clamp(13px, 3.5vw, 16px);
-            margin-bottom: 25px;
-        }
-
-        #menuPrompt {
-            font-size: clamp(14px, 4vw, 18px);
-            margin-bottom: 15px;
-            font-weight: bold;
-            letter-spacing: 1px;
-        }
-
-        .buttonGroup {
-            display: flex;
-            gap: 15px;
-        }
-
-        .diffButton {
-            background: transparent;
-            border: 2px solid #00d2d3;
-            color: #ffffff;
-            padding: 10px 24px;
-            font-size: 14px;
-            font-weight: bold;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .diffButton:active {
-            background-color: #00d2d3;
-            color: #111416;
-            transform: scale(0.95);
+            background-color: #1a1a24;
         }
     </style>
 </head>
 <body>
 
-<div id="diagnosticBanner">✅ COUPLING COMPLETED: ISOLATED LISTENERS SECURED (BUILD 9.0)</div>
-
 <div id="gameContainer">
-    <div id="menuLayer">
-        <h1 id="menuTitle">RETRO RUNNER</h1>
-        <div id="menuStats">🏆 Record: <span id="hiScoreVal">0</span> | 💰 Coins: <span id="coinVal">0</span></div>
-        <div id="menuPrompt">CHOOSE DIFFICULTY TO START</div>
-        <div class="buttonGroup">
-            <!-- Removed inline event calls to block mobile webview restriction crashes -->
-            <button class="diffButton" id="btnEasy">EASY</button>
-            <button class="diffButton" id="btnMedium">MEDIUM</button>
-            <button class="diffButton" id="btnHard">HARD</button>
-        </div>
-    </div>
-    
-    <canvas id="gameCanvas" width="800" height="400"></canvas>
+    <!-- Screen coordinates fixed inside a vertical mobile 400x800 template grid -->
+    <canvas id="gameCanvas" width="400" height="800"></canvas>
 </div>
 
 <script>
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
-    const menuLayer = document.getElementById("menuLayer");
 
     let gameState = "MENU"; 
+    let selectedDifficulty = 1; 
     let score = 0;
     let gameSpeed = 5;
     let maxSpeedSetting = 15;
     let speedIncrementSetting = 0.001;
 
-    const GROUND_Y = canvas.height - 60;
+    // Adjusted lower grounding alignment optimized for vertical mobile perspectives
+    const GROUND_Y = canvas.height - 120;
     const GRAVITY = 0.6;
 
     let scorePopups = [];
@@ -165,7 +80,6 @@
     let highScore = 0;
     let totalCoins = 0;
 
-    // Load metrics from localized system directories
     try {
         if (typeof localStorage !== 'undefined' && localStorage !== null) {
             if (localStorage.getItem("runner_highscore")) highScore = parseFloat(localStorage.getItem("runner_highscore"));
@@ -173,16 +87,14 @@
         }
     } catch (e) {}
 
-    document.getElementById("hiScoreVal").innerText = Math.floor(highScore);
-    document.getElementById("coinVal").innerText = totalCoins;
-
+    // Vertical phone format player coordinates dimensions
     const player = {
-        x: 80,
+        x: 50,
         y: GROUND_Y - 50,
         width: 40,
         height: 50,
         velocityY: 0,
-        jumpForce: -12.5,
+        jumpForce: -13.5,
         isGrounded: false,
         jumpCount: 0,
         maxJumps: 2,
@@ -232,7 +144,7 @@
             this.width = 24;
             this.height = 24;
             this.x = canvas.width + 20;
-            this.y = GROUND_Y - this.height - (Math.random() > 0.5 ? 10 : 75);
+            this.y = GROUND_Y - this.height - (Math.random() > 0.5 ? 20 : 90);
         }
         update() { this.x -= gameSpeed; }
         draw() {
@@ -279,11 +191,7 @@
             if (player.x < obstacles[i].x + obstacles[i].width && player.x + player.width > obstacles[i].x && player.y < obstacles[i].y + obstacles[i].height && player.y + player.height > obstacles[i].y) {
                 gameState = "GAMEOVER";
                 createParticleBurst(player.x + player.width / 2, player.y + player.height / 2, "#ff6b6b");
-                if (score > highScore) {
-                    highScore = score;
-                    try { localStorage.setItem("runner_highscore", highScore); } catch(e){}
-                    document.getElementById("hiScoreVal").innerText = Math.floor(highScore);
-                }
+                if (score > highScore) { highScore = score; try { localStorage.setItem("runner_highscore", highScore); } catch(e){} }
             }
             if (obstacles[i].x + obstacles[i].width < 0) obstacles.splice(i, 1);
         }
@@ -297,3 +205,57 @@
         for (let i = collectibles.length - 1; i >= 0; i--) {
             collectibles[i].update(); collectibles[i].draw();
             if (player.x < collectibles[i].x + collectibles[i].width && player.x + player.width > collectibles[i].x && player.y < collectibles[i].y + collectibles[i].height && player.y + player.height > collectibles[i].y) {
+                let pts = collectibles[i].type === "COIN" ? 50 : 150;
+                let col = collectibles[i].type === "COIN" ? "#f1c40f" : "#9b59b6";
+                score += pts;
+                if (collectibles[i].type === "COIN") { totalCoins++; try { localStorage.setItem("runner_coinbank", totalCoins); } catch(e){} }
+                createParticleBurst(collectibles[i].x + 12, collectibles[i].y + 12, col);
+                scorePopups.push({ text: `+${pts}`, x: player.x + player.width / 2, y: player.y - 10, alpha: 1, color: col });
+                collectibles.splice(i, 1);
+                continue;
+            }
+            if (collectibles[i].x + collectibles[i].width < 0) collectibles.splice(i, 1);
+        }
+
+        for (let i = particles.length - 1; i >= 0; i--) {
+            particles[i].update(); particles[i].draw();
+            if (particles[i].alpha <= 0) particles.splice(i, 1);
+        }
+
+        for (let i = scorePopups.length - 1; i >= 0; i--) {
+            scorePopups[i].y -= 0.8; scorePopups[i].alpha -= 0.025;
+            ctx.save(); ctx.globalAlpha = scorePopups[i].alpha; ctx.fillStyle = scorePopups[i].color;
+            ctx.font = "bold 14px Arial, sans-serif"; ctx.textAlign = "center";
+            ctx.fillText(scorePopups[i].text, scorePopups[i].x, scorePopups[i].y); ctx.restore();
+            if (scorePopups[i].alpha <= 0) scorePopups.splice(i, 1);
+        }
+    }
+
+    function drawBackground() {
+        let bg = "#1e272e", line = "#00d2d3";
+        if (score >= 300 && score < 700) { bg = "#4834d4"; line = "#ffbe76"; }
+        else if (score >= 700) { bg = "#0c1020"; line = "#f1c40f"; }
+        ctx.fillStyle = bg; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.fillStyle = "rgba(255, 255, 255, 0.08)";
+        for (let i = 0; i < canvas.width; i += 40) ctx.fillRect(i + 10, 100, 2, 2);
+
+        ctx.fillStyle = "#2c3e50"; ctx.fillRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
+        ctx.fillStyle = line; ctx.fillRect(0, GROUND_Y, canvas.width, 4);
+    }
+
+    // ==========================================================
+    // CANVAS-NATIVE RENDERING SCENERY (BYPASSES HTML TOUCH LOCKS)
+    // ==========================================================
+    function drawMainMenuScreen() {
+        ctx.fillStyle = "#111416"; 
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.fillStyle = "#00d2d3"; 
+        ctx.font = "bold 32px Arial, sans-serif"; 
+        ctx.textAlign = "center";
+        ctx.fillText("RETRO RUNNER", canvas.width / 2, 180);
+
+        ctx.fillStyle = "#f1c40f"; 
+        ctx.font = "14px Arial, sans-serif";
+        ctx.fillText("🏆 Record: " + Math.floor(highScore), canvas.width / 2, 230);
