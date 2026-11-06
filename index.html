@@ -27,7 +27,7 @@
         }
 
         #diagnosticBanner {
-            background-color: #2ecc71;
+            background-color: #00d2d3;
             color: #111416;
             padding: 8px 16px;
             font-weight: bold;
@@ -46,7 +46,7 @@
             border-radius: 8px;
             overflow: hidden;
             width: 95vw;
-            height: 80vh; /* Takes up vertical screen spacing automatically */
+            height: 80vh; 
             max-width: 800px;
             max-height: 400px;
         }
@@ -61,7 +61,7 @@
 </head>
 <body>
 
-<div id="diagnosticBanner">✅ SYSTEM VERIFICATION: AUDIO & TOUCH MATRIX INITIALIZED (BUILD 4.0)</div>
+<div id="diagnosticBanner">⚡ ULTIMATE PRODUCTION READY BUILD OVERHAUL (BUILD 5.0 LIVE)</div>
 
 <div id="gameContainer">
     <canvas id="gameCanvas" width="800" height="400"></canvas>
@@ -71,7 +71,6 @@
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
 
-    // Core Game loop architecture state tracking values
     let gameState = "MENU"; 
     let selectedDifficulty = 1; 
     let score = 0;
@@ -94,7 +93,6 @@
     let highScore = 0;
     let totalCoins = 0;
 
-    // Player configurations maps layout coordinates limits
     const player = {
         x: 80,
         y: GROUND_Y - 50,
@@ -270,3 +268,7 @@
         ctx.fillText("TAP DIFFICULTY TO START", canvas.width / 2, 225);
 
         const diffs = ["EASY", "MEDIUM", "HARD"];
+        for (let i = 0; i < diffs.length; i++) {
+            let bX = canvas.width / 2 - 120 + (i * 120);
+            let bY = 260;
+            if (i === selectedDifficulty) {
