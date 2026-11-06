@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Retro Endless Runner - Fail Safe Build</title>
+    <title>Retro Endless Runner - Ultimate Safe Build</title>
     <style>
         body {
             margin: 0;
@@ -59,10 +59,29 @@
     let particles = [];
 
     // ==========================================
-    // PERSISTENT STORAGE SYSTEMS
+    // ANTI-CRASH STORAGE SYSTEM SAFETY NET
     // ==========================================
-    let highScore = localStorage.getItem("runner_highscore") ? parseFloat(localStorage.getItem("runner_highscore")) : 0;
-    let totalCoins = localStorage.getItem("runner_coinbank") ? parseInt(localStorage.getItem("runner_coinbank")) : 0;
+    let highScore = 0;
+    let totalCoins = 0;
+
+    try {
+        if (localStorage.getItem("runner_highscore")) {
+            highScore = parseFloat(localStorage.getItem("runner_highscore"));
+        }
+        if (localStorage.getItem("runner_coinbank")) {
+            totalCoins = parseInt(localStorage.getItem("runner_coinbank"));
+        }
+    } catch (e) {
+        console.warn("Storage access denied by browser settings. Using session memory instead.");
+    }
+
+    function saveData(key, value) {
+        try {
+            localStorage.setItem(key, value);
+        } catch (e) {
+            // Silently absorb if blocked so it never freezes the game loop
+        }
+    }
 
     // ==========================================
     // WEB AUDIO OSCILLATOR SYNTHESIZER
@@ -71,7 +90,11 @@
 
     function initAudio() {
         if (!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            } catch (e) {
+                console.warn("Audio context not supported.");
+            }
         }
     }
 
@@ -137,7 +160,7 @@
     }
 
     // ==========================================================
-    // REPOSITORY IMAGE PATHS WITH LOAD DETECTION VERIFICATION
+    // IMAGE LOADER CHECKS
     // ==========================================================
     let heroLoaded = false;
     let obstacleLoaded = false;
@@ -192,7 +215,6 @@
             if (heroLoaded && imgPlayer.complete && imgPlayer.naturalWidth > 0) {
                 ctx.drawImage(imgPlayer, this.x, this.y, this.width, this.height);
             } else {
-                // Fail-safe block: Draws a bright cyan block if hero.png isn't available
                 ctx.fillStyle = "#00d2d3"; 
                 ctx.fillRect(this.x, this.y, this.width, this.height);
             }
@@ -207,7 +229,7 @@
     };
 
     // ==========================================
-    // RANDOMIZED OBSTACLE MANIFESTS
+    // RANDOMIZED OBSTACLE CORES
     // ==========================================
     let obstacles = [];
     let spawnTimer = 0;
@@ -230,7 +252,6 @@
             if (obstacleLoaded && imgObstacle.complete && imgObstacle.naturalWidth > 0) {
                 ctx.drawImage(imgObstacle, this.x, this.y, this.width, this.height);
             } else {
-                // Fail-safe block: Draws a crimson orange hazard box if image path breaks
                 ctx.fillStyle = "#ff6b6b"; 
                 ctx.fillRect(this.x, this.y, this.width, this.height);
             }
@@ -261,7 +282,7 @@
                 if (coinLoaded && imgCoin.complete && imgCoin.naturalWidth > 0) {
                     ctx.drawImage(imgCoin, this.x, this.y, this.width, this.height);
                 } else {
-                    ctx.fillStyle = "#f1c40f"; // Gold circle fail-safe
+                    ctx.fillStyle = "#f1c40f"; 
                     ctx.beginPath();
                     ctx.arc(this.x + this.width/2, this.y + this.height/2, this.width/2, 0, Math.PI*2);
                     ctx.fill();
@@ -270,7 +291,7 @@
                 if (itemLoaded && imgItem.complete && imgItem.naturalWidth > 0) {
                     ctx.drawImage(imgItem, this.x, this.y, this.width, this.height);
                 } else {
-                    ctx.fillStyle = "#9b59b6"; // Purple circle fail-safe
+                    ctx.fillStyle = "#9b59b6"; 
                     ctx.beginPath();
                     ctx.arc(this.x + this.width/2, this.y + this.height/2, this.width/2, 0, Math.PI*2);
                     ctx.fill();
@@ -288,13 +309,3 @@
             this.y = y;
             this.color = color;
             this.radius = 2 + Math.random() * 3;
-            this.vx = (Math.random() - 0.5) * 6;
-            this.vy = (Math.random() - 0.7) * 6; 
-            this.alpha = 1;
-            this.decay = 0.02 + Math.random() * 0.02;
-        }
-
-        update() {
-            this.x += this.vx;
-            this.y += this.vy;
-            this.vy += 0.1; 
