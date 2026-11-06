@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Retro Runner - Universal Mobile Port</title>
+    <title>Retro Runner - Complete Mobile Rebuild</title>
     <style>
         * {
             box-sizing: border-box;
@@ -31,10 +31,9 @@
             border: 2px solid #00d2d3;
             border-radius: 8px;
             overflow: hidden;
-            /* DYNAMIC FLUID VERTICAL LAYOUT ADJUSTMENT */
             width: 95vw;
             height: 90vh;
-            max-width: 450px; /* Locked to vertical mobile dimensions */
+            max-width: 450px; 
             max-height: 800px;
         }
 
@@ -42,14 +41,13 @@
             display: block;
             width: 100%;
             height: 100%;
-            background-color: #1a1a24;
+            background-color: #111416;
         }
     </style>
 </head>
 <body>
 
 <div id="gameContainer">
-    <!-- Screen coordinates fixed inside a vertical mobile 400x800 template grid -->
     <canvas id="gameCanvas" width="400" height="800"></canvas>
 </div>
 
@@ -64,7 +62,6 @@
     let maxSpeedSetting = 15;
     let speedIncrementSetting = 0.001;
 
-    // Adjusted lower grounding alignment optimized for vertical mobile perspectives
     const GROUND_Y = canvas.height - 120;
     const GRAVITY = 0.6;
 
@@ -87,7 +84,6 @@
         }
     } catch (e) {}
 
-    // Vertical phone format player coordinates dimensions
     const player = {
         x: 50,
         y: GROUND_Y - 50,
@@ -244,9 +240,6 @@
         ctx.fillStyle = line; ctx.fillRect(0, GROUND_Y, canvas.width, 4);
     }
 
-    // ==========================================================
-    // CANVAS-NATIVE RENDERING SCENERY (BYPASSES HTML TOUCH LOCKS)
-    // ==========================================================
     function drawMainMenuScreen() {
         ctx.fillStyle = "#111416"; 
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -259,3 +252,16 @@
         ctx.fillStyle = "#f1c40f"; 
         ctx.font = "14px Arial, sans-serif";
         ctx.fillText("🏆 Record: " + Math.floor(highScore), canvas.width / 2, 230);
+        ctx.fillText("💰 Coins: " + totalCoins, canvas.width / 2, 255);
+
+        ctx.fillStyle = "#ffffff"; 
+        ctx.font = "bold 15px Arial, sans-serif";
+        ctx.fillText("TAP DIFFICULTY TO START", canvas.width / 2, 350);
+
+        const diffs = ["EASY", "MEDIUM", "HARD"];
+        for (let i = 0; i < diffs.length; i++) {
+            let bY = 400 + (i * 70);
+            let bX = canvas.width / 2;
+
+            if (i === selectedDifficulty) {
+                ctx.fillStyle = "#00d2d3";
