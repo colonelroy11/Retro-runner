@@ -2,9 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Retro Runner - Core Diagnostics</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Retro Runner - Universal Responsive Edition</title>
     <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
         body {
             margin: 0;
             padding: 0;
@@ -21,9 +26,8 @@
             touch-action: none;
         }
 
-        /* Diagnostic Banner to verify code updates */
         #diagnosticBanner {
-            background-color: #f1c40f;
+            background-color: #2ecc71;
             color: #111416;
             padding: 8px 16px;
             font-weight: bold;
@@ -32,6 +36,7 @@
             font-size: 14px;
             text-align: center;
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            z-index: 10;
         }
 
         #gameContainer {
@@ -41,8 +46,9 @@
             border-radius: 8px;
             overflow: hidden;
             width: 95vw;
+            height: 80vh; /* Takes up vertical screen spacing automatically */
             max-width: 800px;
-            aspect-ratio: 2 / 1;
+            max-height: 400px;
         }
 
         canvas {
@@ -55,8 +61,7 @@
 </head>
 <body>
 
-<!-- THIS BANNER MUST APPEAR. IF IT DOES NOT, THE WEBSITE IS CACHED -->
-<div id="diagnosticBanner">✅ SYSTEM VERIFICATION: CODE UPDATE SUCCESSFUL (BUILD 3.0)</div>
+<div id="diagnosticBanner">✅ SYSTEM VERIFICATION: AUDIO & TOUCH MATRIX INITIALIZED (BUILD 4.0)</div>
 
 <div id="gameContainer">
     <canvas id="gameCanvas" width="800" height="400"></canvas>
@@ -66,6 +71,7 @@
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
 
+    // Core Game loop architecture state tracking values
     let gameState = "MENU"; 
     let selectedDifficulty = 1; 
     let score = 0;
@@ -88,7 +94,7 @@
     let highScore = 0;
     let totalCoins = 0;
 
-    // Fixed internal player model template
+    // Player configurations maps layout coordinates limits
     const player = {
         x: 80,
         y: GROUND_Y - 50,
@@ -255,16 +261,12 @@
     function drawMainMenuScreen() {
         ctx.fillStyle = "#111416"; ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = "#00d2d3"; ctx.font = "bold 38px sans-serif"; ctx.textAlign = "center";
-        ctx.fillText("RETRO RUNNER", canvas.width / 2, 95);
+        ctx.fillText("RETRO RUNNER", canvas.width / 2, 105);
 
         ctx.fillStyle = "#f1c40f"; ctx.font = "15px sans-serif";
-        ctx.fillText(`🏆 Record: ${Math.floor(highScore)}   |   💰 Coins: ${totalCoins}`, canvas.width / 2, 140);
+        ctx.fillText(`🏆 Record: ${Math.floor(highScore)}   |   💰 Coins: ${totalCoins}`, canvas.width / 2, 150);
 
         ctx.fillStyle = "#ffffff"; ctx.font = "16px sans-serif";
-        ctx.fillText("TAP DIFFICULTY TO START", canvas.width / 2, 215);
+        ctx.fillText("TAP DIFFICULTY TO START", canvas.width / 2, 225);
 
         const diffs = ["EASY", "MEDIUM", "HARD"];
-        for (let i = 0; i < diffs.length; i++) {
-            let bX = canvas.width / 2 - 120 + (i * 120);
-            let bY = 250;
-            if (i === selectedDifficulty) {
