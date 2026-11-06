@@ -1,272 +1,253 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="Content-Style-Type" content="text/css">
-  <title></title>
-  <meta name="Generator" content="Cocoa HTML Writer">
-  <meta name="CocoaVersion" content="2685.7">
-  <style type="text/css">
-    body {background-color: #05060a}
-    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px 'Courier New'; color: #ffffff; -webkit-text-stroke: #ffffff}
-    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px 'Courier New'; color: #ffffff; -webkit-text-stroke: #ffffff; min-height: 14.0px}
-    span.s1 {font-kerning: none}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Retro Cyber Runner - Cloud Host Build</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #04050a;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            color: #ffffff;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100%;
+            max-width: 430px;
+            height: 100%;
+            max-height: 780px;
+            box-shadow: 0 0 50px rgba(56, 189, 248, 0.5);
+            aspect-ratio: 9 / 16;
+            background-color: #060913;
+            border: 2px solid #101726;
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
 </head>
 <body>
-<p class="p1"><span class="s1">&lt;!DOCTYPE html&gt;</span></p>
-<p class="p1"><span class="s1">&lt;html lang="en"&gt;</span></p>
-<p class="p1"><span class="s1">&lt;head&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;meta charset="UTF-8"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;title&gt;Retro Cyber Runner - Cloud Host Build&lt;/title&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;style&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>body {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>margin: 0;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>padding: 0;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>background-color: #04050a;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>font-family: 'Courier New', Courier, monospace;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>display: flex;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>justify-content: center;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>align-items: center;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>height: 100vh;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>width: 100vw;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>overflow: hidden;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>color: #ffffff;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>user-select: none;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>-webkit-user-select: none;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>touch-action: none;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>#gameContainer {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>position: relative;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>width: 100%;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>max-width: 430px;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>height: 100%;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>max-height: 780px;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>box-shadow: 0 0 50px rgba(56, 189, 248, 0.5);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>aspect-ratio: 9 / 16;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>background-color: #060913;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>border: 2px solid #101726;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>border-radius: 14px;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>overflow: hidden;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>canvas {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>display: block;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>width: 100%;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>height: 100%;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;/style&gt;</span></p>
-<p class="p1"><span class="s1">&lt;/head&gt;</span></p>
-<p class="p1"><span class="s1">&lt;body&gt;</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1">&lt;div id="gameContainer"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;canvas id="gameCanvas"&gt;&lt;/canvas&gt;</span></p>
-<p class="p1"><span class="s1">&lt;/div&gt;</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1">&lt;script&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>const canvas = document.getElementById('gameCanvas');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>const ctx = canvas.getContext('2d');</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>function resizeCanvas() {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>const container = document.getElementById('gameContainer');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>canvas.width = container.clientWidth;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>canvas.height = container.clientHeight;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>resizeCanvas();</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>// ==========================================</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>// WEB AUDIO SYNTHESIZERS (ZERO-FILE SOUNDS)</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>// ==========================================</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>const AudioEngine = {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>ctx: null,</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>init() {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>},</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>play(type) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>this.init();</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>if (!this.ctx) return;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const osc = this.ctx.createOscillator();</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const gain = this.ctx.createGain();</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>osc.connect(gain); gain.connect(this.ctx.destination);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const now = this.ctx.currentTime;</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>if (type === 'jump') {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>osc.type = 'square';</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>osc.frequency.setValueAtTime(140, now);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>osc.frequency.exponentialRampToValueAtTime(420, now + 0.12);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>gain.gain.setValueAtTime(0.06, now);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>osc.start(now); osc.stop(now + 0.12);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>} else if (type === 'coin') {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>osc.type = 'sine';</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>osc.frequency.setValueAtTime(620, now);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>osc.frequency.setValueAtTime(930, now + 0.06);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>gain.gain.setValueAtTime(0.08, now);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>osc.start(now); osc.stop(now + 0.22);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>} else if (type === 'shield') {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>osc.type = 'triangle';</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>osc.frequency.setValueAtTime(250, now);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>osc.frequency.exponentialRampToValueAtTime(550, now + 0.25);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>gain.gain.setValueAtTime(0.08, now);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>osc.start(now); osc.stop(now + 0.25);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>} else if (type === 'laser') {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>osc.type = 'sawtooth';</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>osc.frequency.setValueAtTime(800, now);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>osc.frequency.linearRampToValueAtTime(150, now + 0.15);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>gain.gain.setValueAtTime(0.05, now);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>osc.start(now); osc.stop(now + 0.15);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>} else if (type === 'crash') {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>osc.type = 'sawtooth';</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>osc.frequency.setValueAtTime(100, now);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>osc.frequency.linearRampToValueAtTime(20, now + 0.4);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>gain.gain.setValueAtTime(0.2, now);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>osc.start(now); osc.stop(now + 0.4);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>};</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>// ==========================================</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>// GAME CORE CONFIGURATIONS &amp; STATE REGISTERS</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>// ==========================================</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>let currentMenu = 'DIFFICULTY';<span class="Apple-converted-space"> </span></span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>const difficultySettings = {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>EASY: <span class="Apple-converted-space">  </span>{ speed: 3.5, accel: 0.0001, spawnMod: 1.3 },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>MEDIUM: { speed: 5.0, accel: 0.0003, spawnMod: 1.0 },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>HARD: <span class="Apple-converted-space">  </span>{ speed: 7.0, accel: 0.0006, spawnMod: 0.72 }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>};</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>let activeDiff = 'MEDIUM';</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>let GRAVITY = 0.5;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>let gameSpeed = 5;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>let speedAccel = 0.0003;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>let score = 0;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>let animationFrameId = null;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>let lastObstacleTime = 0;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>let spawnDelay = 1500;</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>let highScore = localStorage.getItem('cc_runner_hi') ? parseInt(localStorage.getItem('cc_runner_hi')) : 0;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>let totalCoins = localStorage.getItem('cc_total_coins') ? parseInt(localStorage.getItem('cc_total_coins')) : 0;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>let magnetLevel = localStorage.getItem('cc_shop_mag') ? parseInt(localStorage.getItem('cc_shop_mag')) : 1;<span class="Apple-converted-space"> </span></span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>let jumpLevel = localStorage.getItem('cc_shop_jmp') ? parseInt(localStorage.getItem('cc_shop_jmp')) : 1;<span class="Apple-converted-space"> </span></span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>let coinCombo = 0;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>let comboTimer = 0;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>const COMBO_DURATION = 120;</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>let shieldActive = false;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>let shieldTimer = 0;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>let maxShieldDuration = 300 + (magnetLevel - 1) * 90;<span class="Apple-converted-space"> </span></span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>let activeSkinIndex = 0;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>const customSkins = [</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>{ name: 'NEON SLIME', color: '#4ade80', trailColor: 'rgba(74, 222, 128,' },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>{ name: 'CYBER VAPOR', color: '#22d3ee', trailColor: 'rgba(34, 211, 238,' }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>];</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>let player;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>let obstacles = [];</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>let coins = [];</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>let items = [];</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>let particles = [];</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>let lasers = [];</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>let bossEnemy = null;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>let shareFeedbackTimer = 0;</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>function getUpgradeCost(level) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>if (level &gt;= 5) return 'MAX';</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>return level * 150;<span class="Apple-converted-space"> </span></span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>// ==========================================</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>// CLOUD ASSET FILE MANAGER</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>// ==========================================</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>const sprites = { playerSheet: new Image(), obstacle: new Image(), coin: new Image(), item: new Image() };</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>let assetsReady = { playerSheet: false, obstacle: false, coin: false, item: false };</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>sprites.playerSheet.onload = () =&gt; { assetsReady.playerSheet = true; };</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>sprites.obstacle.onload = () =&gt; { assetsReady.obstacle = true; };</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>sprites.coin.onload = () =&gt; { assetsReady.coin = true; };</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>sprites.item.onload = () =&gt; { assetsReady.item = true; };</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>// Standard relative cloud paths</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>sprites.playerSheet.src = 'hero.png';<span class="Apple-converted-space"> </span></span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>sprites.obstacle.src = 'obstacle.png';<span class="Apple-converted-space"> </span></span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>sprites.coin.src = 'coin.png';<span class="Apple-converted-space"> </span></span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>sprites.item.src = 'item.png';</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>// ==========================================</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>// VISUAL EFFECT SYSTEMS</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>// ==========================================</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>class Particle {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>constructor(x, y, color) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>this.x = x; this.y = y;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>this.vx = (Math.random() - 0.5) * 6;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>this.vy = (Math.random() - 0.5) * 6 - 2;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>this.radius = 2 + Math.random() * 3;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>this.color = color; this.alpha = 1;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>this.decay = 0.02 + Math.random() * 0.03;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>update() { this.x += this.vx; this.y += this.vy; this.alpha -= this.decay; }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>draw() {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>ctx.save(); ctx.globalAlpha = this.alpha; ctx.fillStyle = this.color;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fill(); ctx.restore();</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>function createExplosion(x, y, color, count = 12) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>for (let i = 0; i &lt; count; i++) particles.push(new Particle(x, y, color));</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>class BackgroundSystem {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>constructor() { this.hue = 0; }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>update() {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>if (bossEnemy) { this.hue = 0; return; }<span class="Apple-converted-space"> </span></span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>this.hue = (score * 0.15) % 360;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>draw() {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>let gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>if (bossEnemy) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>gradient.addColorStop(0, '#1a0505'); gradient.addColorStop(1, '#080101');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>} else {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>gradient.addColorStop(0, `hsl(${this.hue}, 40%, 4%)`); gradient.addColorStop(1, `hsl(${(this.hue + 60) % 360}, 45%, 10%)`);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>ctx.fillStyle = gradient; ctx.fillRect(0, 0, canvas.width, canvas.height);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>ctx.strokeStyle = bossEnemy ? 'rgba(239, 68, 68, 0.05)' : `hsla(${this.hue}, 80%, 60%, 0.04)`;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>ctx.lineWidth = 1;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>for (let i = 0; i &lt; canvas.width; i += 40) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>const bgEngine = new BackgroundSystem();</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>// ==========================================</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>// ENTITIES &amp; LOOPS</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>// ==========================================</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>class Player {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>constructor() {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>this.width = 44; this.height = 54; this.x = 40;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>this.groundY = canvas.height - this.height - 80; this.y = this.groundY;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>this.velocityY = 0;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>this.jumpForce = -12 - (jumpLevel - 1) * 0.5;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>this.jumpCount = 0; this.maxJumps = 2;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>this.frameIndex = 0; this.tickCount = 0; this.ticksPerFrame = 6; this.numberOfFrames = 4;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>this.trail = []; this.maxTrailSegments = 6;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>jump() {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>if (this.jumpCount &lt; this.maxJumps) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>AudioEngine.play('jump');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>this.velocityY = this.jumpForce; this.jumpCount++;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>createExplosion(this.x + this.width / 2, this.y + this.height, customSkins[activeSkinIndex].color, 6);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>update() {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>this.velocityY += GRAVITY; this.y += this.velocityY;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>if (this.y &gt;= this.groundY) { this.y = this.groundY; this.velocityY = 0; this.jumpCount = 0; }</span></p>
-</body>
-</html>
+
+<div id="gameContainer">
+    <canvas id="gameCanvas"></canvas>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+        const container = document.getElementById('gameContainer');
+        canvas.width = container.clientWidth;
+        canvas.height = container.clientHeight;
+    }
+    resizeCanvas();
+
+    // ==========================================
+    // WEB AUDIO SYNTHESIZERS (ZERO-FILE SOUNDS)
+    // ==========================================
+    const AudioEngine = {
+        ctx: null,
+        init() {
+            if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        },
+        play(type) {
+            this.init();
+            if (!this.ctx) return;
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.connect(gain); gain.connect(this.ctx.destination);
+            const now = this.ctx.currentTime;
+
+            if (type === 'jump') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(140, now);
+                osc.frequency.exponentialRampToValueAtTime(420, now + 0.12);
+                gain.gain.setValueAtTime(0.06, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+                osc.start(now); osc.stop(now + 0.12);
+            } else if (type === 'coin') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(620, now);
+                osc.frequency.setValueAtTime(930, now + 0.06);
+                gain.gain.setValueAtTime(0.08, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+                osc.start(now); osc.stop(now + 0.22);
+            } else if (type === 'shield') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(250, now);
+                osc.frequency.exponentialRampToValueAtTime(550, now + 0.25);
+                gain.gain.setValueAtTime(0.08, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+                osc.start(now); osc.stop(now + 0.25);
+            } else if (type === 'laser') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(800, now);
+                osc.frequency.linearRampToValueAtTime(150, now + 0.15);
+                gain.gain.setValueAtTime(0.05, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+                osc.start(now); osc.stop(now + 0.15);
+            } else if (type === 'crash') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(100, now);
+                osc.frequency.linearRampToValueAtTime(20, now + 0.4);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+                osc.start(now); osc.stop(now + 0.4);
+            }
+        }
+    };
+
+    // ==========================================
+    // GAME CORE CONFIGURATIONS & STATE REGISTERS
+    // ==========================================
+    let currentMenu = 'DIFFICULTY'; 
+    const difficultySettings = {
+        EASY:   { speed: 3.5, accel: 0.0001, spawnMod: 1.3 },
+        MEDIUM: { speed: 5.0, accel: 0.0003, spawnMod: 1.0 },
+        HARD:   { speed: 7.0, accel: 0.0006, spawnMod: 0.72 }
+    };
+    let activeDiff = 'MEDIUM';
+
+    let GRAVITY = 0.5;
+    let gameSpeed = 5;
+    let speedAccel = 0.0003;
+    let score = 0;
+    let animationFrameId = null;
+    let lastObstacleTime = 0;
+    let spawnDelay = 1500;
+
+    let highScore = localStorage.getItem('cc_runner_hi') ? parseInt(localStorage.getItem('cc_runner_hi')) : 0;
+    let totalCoins = localStorage.getItem('cc_total_coins') ? parseInt(localStorage.getItem('cc_total_coins')) : 0;
+    let magnetLevel = localStorage.getItem('cc_shop_mag') ? parseInt(localStorage.getItem('cc_shop_mag')) : 1; 
+    let jumpLevel = localStorage.getItem('cc_shop_jmp') ? parseInt(localStorage.getItem('cc_shop_jmp')) : 1; 
+
+    let coinCombo = 0;
+    let comboTimer = 0;
+    const COMBO_DURATION = 120;
+
+    let shieldActive = false;
+    let shieldTimer = 0;
+    let maxShieldDuration = 300 + (magnetLevel - 1) * 90; 
+
+    let activeSkinIndex = 0;
+    const customSkins = [
+        { name: 'NEON SLIME', color: '#4ade80', trailColor: 'rgba(74, 222, 128,' },
+        { name: 'CYBER VAPOR', color: '#22d3ee', trailColor: 'rgba(34, 211, 238,' }
+    ];
+
+    let player;
+    let obstacles = [];
+    let coins = [];
+    let items = [];
+    let particles = [];
+    let lasers = [];
+    let bossEnemy = null;
+    let shareFeedbackTimer = 0;
+
+    function getUpgradeCost(level) {
+        if (level >= 5) return 'MAX';
+        return level * 150; 
+    }
+
+    // ==========================================
+    // CLOUD ASSET FILE MANAGER
+    // ==========================================
+    const sprites = { playerSheet: new Image(), obstacle: new Image(), coin: new Image(), item: new Image() };
+    let assetsReady = { playerSheet: false, obstacle: false, coin: false, item: false };
+
+    sprites.playerSheet.onload = () => { assetsReady.playerSheet = true; };
+    sprites.obstacle.onload = () => { assetsReady.obstacle = true; };
+    sprites.coin.onload = () => { assetsReady.coin = true; };
+    sprites.item.onload = () => { assetsReady.item = true; };
+
+    sprites.playerSheet.src = 'hero.png'; 
+    sprites.obstacle.src = 'obstacle.png'; 
+    sprites.coin.src = 'coin.png'; 
+    sprites.item.src = 'item.png';
+
+    // ==========================================
+    // VISUAL EFFECT SYSTEMS
+    // ==========================================
+    class Particle {
+        constructor(x, y, color) {
+            this.x = x; this.y = y;
+            this.vx = (Math.random() - 0.5) * 6;
+            this.vy = (Math.random() - 0.5) * 6 - 2;
+            this.radius = 2 + Math.random() * 3;
+            this.color = color; this.alpha = 1;
+            this.decay = 0.02 + Math.random() * 0.03;
+        }
+        update() { this.x += this.vx; this.y += this.vy; this.alpha -= this.decay; }
+        draw() {
+            ctx.save(); ctx.globalAlpha = this.alpha; ctx.fillStyle = this.color;
+            ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+        }
+    }
+    function createExplosion(x, y, color, count = 12) {
+        for (let i = 0; i < count; i++) particles.push(new Particle(x, y, color));
+    }
+
+    class BackgroundSystem {
+        constructor() { this.hue = 0; }
+        update() {
+            if (bossEnemy) { this.hue = 0; return; } 
+            this.hue = (score * 0.15) % 360;
+        }
+        draw() {
+            let gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            if (bossEnemy) {
+                gradient.addColorStop(0, '#1a0505'); gradient.addColorStop(1, '#080101');
+            } else {
+                gradient.addColorStop(0, `hsl(${this.hue}, 40%, 4%)`); gradient.addColorStop(1, `hsl(${(this.hue + 60) % 360}, 45%, 10%)`);
+            }
+            ctx.fillStyle = gradient; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = bossEnemy ? 'rgba(239, 68, 68, 0.05)' : `hsla(${this.hue}, 80%, 60%, 0.04)`;
+            ctx.lineWidth = 1;
+            for (let i = 0; i < canvas.width; i += 40) {
+                ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
+            }
+        }
+    }
+    const bgEngine = new BackgroundSystem();
+
+    // ==========================================
+    // ENTITIES & LOOPS
+    // ==========================================
+    class Player {
+        constructor() {
+            this.width = 44; this.height = 54; this.x = 40;
+            this.groundY = canvas.height - this.height - 80; this.y = this.groundY;
+            this.velocityY = 0;
+            this.jumpForce = -12 - (jumpLevel - 1) * 0.5;
+            this.jumpCount = 0; this.maxJumps = 2;
+            this.frameIndex = 0; this.tickCount = 0; this.ticksPerFrame = 6; this.numberOfFrames = 4;
+            this.trail = []; this.maxTrailSegments = 6;
+        }
+        jump() {
+            if (this.jumpCount < this.maxJumps) {
+                AudioEngine.play('jump');
+                this.velocityY = this.jumpForce; this.jumpCount++;
+                createExplosion(this.x + this.width / 2, this.y + this.height, customSkins[activeSkinIndex].color, 6);
+            }
+        }
+        update() {
+            this.velocityY += GRAVITY; this.y += this.velocityY;
+            if (this.y >= this.groundY) { this.y = this.groundY; this.velocityY = 0; this.jumpCount = 0; }
