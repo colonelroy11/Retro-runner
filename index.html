@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Retro Runner - Complete Mobile Rebuild</title>
+    <title>Retro Runner - Arcade Port</title>
     <style>
         * {
             box-sizing: border-box;
@@ -33,8 +33,8 @@
             overflow: hidden;
             width: 95vw;
             height: 90vh;
-            max-width: 450px; 
-            max-height: 800px;
+            max-width: 430px; 
+            max-height: 760px;
         }
 
         canvas {
@@ -48,7 +48,7 @@
 <body>
 
 <div id="gameContainer">
-    <canvas id="gameCanvas" width="400" height="800"></canvas>
+    <canvas id="gameCanvas" width="400" height="700"></canvas>
 </div>
 
 <script>
@@ -74,18 +74,12 @@
     let minSpawnInterval = 70;
     let maxSpawnInterval = 160;
 
+    // CRITICAL FIX: Pure memory session storage variables. Completely removes localStorage crashes.
     let highScore = 0;
     let totalCoins = 0;
 
-    try {
-        if (typeof localStorage !== 'undefined' && localStorage !== null) {
-            if (localStorage.getItem("runner_highscore")) highScore = parseFloat(localStorage.getItem("runner_highscore"));
-            if (localStorage.getItem("runner_coinbank")) totalCoins = parseInt(localStorage.getItem("runner_coinbank"));
-        }
-    } catch (e) {}
-
     const player = {
-        x: 50,
+        x: 60,
         y: GROUND_Y - 50,
         width: 40,
         height: 50,
@@ -187,7 +181,7 @@
             if (player.x < obstacles[i].x + obstacles[i].width && player.x + player.width > obstacles[i].x && player.y < obstacles[i].y + obstacles[i].height && player.y + player.height > obstacles[i].y) {
                 gameState = "GAMEOVER";
                 createParticleBurst(player.x + player.width / 2, player.y + player.height / 2, "#ff6b6b");
-                if (score > highScore) { highScore = score; try { localStorage.setItem("runner_highscore", highScore); } catch(e){} }
+                if (score > highScore) highScore = score;
             }
             if (obstacles[i].x + obstacles[i].width < 0) obstacles.splice(i, 1);
         }
@@ -204,7 +198,7 @@
                 let pts = collectibles[i].type === "COIN" ? 50 : 150;
                 let col = collectibles[i].type === "COIN" ? "#f1c40f" : "#9b59b6";
                 score += pts;
-                if (collectibles[i].type === "COIN") { totalCoins++; try { localStorage.setItem("runner_coinbank", totalCoins); } catch(e){} }
+                if (collectibles[i].type === "COIN") totalCoins++;
                 createParticleBurst(collectibles[i].x + 12, collectibles[i].y + 12, col);
                 scorePopups.push({ text: `+${pts}`, x: player.x + player.width / 2, y: player.y - 10, alpha: 1, color: col });
                 collectibles.splice(i, 1);
@@ -247,21 +241,34 @@
         ctx.fillStyle = "#00d2d3"; 
         ctx.font = "bold 32px Arial, sans-serif"; 
         ctx.textAlign = "center";
-        ctx.fillText("RETRO RUNNER", canvas.width / 2, 180);
+        ctx.fillText("RETRO RUNNER", canvas.width / 2, 160);
 
         ctx.fillStyle = "#f1c40f"; 
         ctx.font = "14px Arial, sans-serif";
-        ctx.fillText("🏆 Record: " + Math.floor(highScore), canvas.width / 2, 230);
-        ctx.fillText("💰 Coins: " + totalCoins, canvas.width / 2, 255);
+        ctx.fillText("🏆 Record: " + Math.floor(highScore), canvas.width / 2, 210);
+        ctx.fillText("💰 Coins: " + totalCoins, canvas.width / 2, 235);
 
         ctx.fillStyle = "#ffffff"; 
         ctx.font = "bold 15px Arial, sans-serif";
-        ctx.fillText("TAP DIFFICULTY TO START", canvas.width / 2, 350);
+        ctx.fillText("TAP DIFFICULTY TO START", canvas.width / 2, 320);
 
         const diffs = ["EASY", "MEDIUM", "HARD"];
         for (let i = 0; i < diffs.length; i++) {
-            let bY = 400 + (i * 70);
+            let bY = 370 + (i * 70);
             let bX = canvas.width / 2;
 
             if (i === selectedDifficulty) {
                 ctx.fillStyle = "#00d2d3";
+                ctx.fillRect(bX - 80, bY, 160, 45);
+                ctx.fillStyle = "#111416";
+            } else {
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
+                ctx.strokeRect(bX - 80, bY, 160, 45);
+                ctx.fillStyle = "#ffffff";
+            }
+            ctx.font = "bold 15px Arial, sans-serif";
+            ctx.fillText(diffs[i], bX, bY + 28);
+        }
+    }
+
+    function drawGameOverScreen() {
