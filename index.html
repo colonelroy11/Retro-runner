@@ -2,9 +2,15 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Retro Endless Runner - Ultimate Safe Build</title>
+    <!-- Viewport configurations optimized for responsive screen scaling -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Retro Endless Runner - Universal Mobile Rebuild</title>
     <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
         body {
             margin: 0;
             padding: 0;
@@ -12,11 +18,12 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             color: #ffffff;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             overflow: hidden;
             user-select: none;
+            touch-action: none;
         }
 
         #gameContainer {
@@ -24,17 +31,23 @@
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
             border-radius: 8px;
             overflow: hidden;
+            width: 100%;
+            max-width: 800px;
+            aspect-ratio: 2 / 1;
         }
 
         canvas {
             background-color: #2c3e50;
             display: block;
+            width: 100%;
+            height: 100%;
         }
     </style>
 </head>
 <body>
 
 <div id="gameContainer">
+    <!-- Fixed internal reference sizes for consistent engine hitboxes across display formats -->
     <canvas id="gameCanvas" width="800" height="400"></canvas>
 </div>
 
@@ -59,32 +72,34 @@
     let particles = [];
 
     // ==========================================
-    // ANTI-CRASH STORAGE SYSTEM SAFETY NET
+    // ANTI-CRASH STORAGE MEMORY PROTECTION
     // ==========================================
     let highScore = 0;
     let totalCoins = 0;
 
     try {
-        if (localStorage.getItem("runner_highscore")) {
-            highScore = parseFloat(localStorage.getItem("runner_highscore"));
-        }
-        if (localStorage.getItem("runner_coinbank")) {
-            totalCoins = parseInt(localStorage.getItem("runner_coinbank"));
+        if (typeof localStorage !== 'undefined' && localStorage !== null) {
+            if (localStorage.getItem("runner_highscore")) {
+                highScore = parseFloat(localStorage.getItem("runner_highscore"));
+            }
+            if (localStorage.getItem("runner_coinbank")) {
+                totalCoins = parseInt(localStorage.getItem("runner_coinbank"));
+            }
         }
     } catch (e) {
-        console.warn("Storage access denied by browser settings. Using session memory instead.");
+        console.log("Storage access restricted. Safe-mode active.");
     }
 
     function saveData(key, value) {
         try {
-            localStorage.setItem(key, value);
-        } catch (e) {
-            // Silently absorb if blocked so it never freezes the game loop
-        }
+            if (typeof localStorage !== 'undefined' && localStorage !== null) {
+                localStorage.setItem(key, value);
+            }
+        } catch (e) {}
     }
 
     // ==========================================
-    // WEB AUDIO OSCILLATOR SYNTHESIZER
+    // AUDIO FREQUENCY GENERATOR
     // ==========================================
     let audioCtx = null;
 
@@ -92,80 +107,72 @@
         if (!audioCtx) {
             try {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            } catch (e) {
-                console.warn("Audio context not supported.");
-            }
+            } catch (e) {}
         }
     }
 
     function playSound(type) {
         if (!audioCtx) return;
-        if (audioCtx.state === 'suspended') {
-            audioCtx.resume();
-        }
+        try {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
 
-        const osc = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
-        osc.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
 
-        const now = audioCtx.currentTime;
+            const now = audioCtx.currentTime;
 
-        if (type === "JUMP") {
-            osc.type = "triangle";
-            osc.frequency.setValueAtTime(150, now);
-            osc.frequency.exponentialRampToValueAtTime(400, now + 0.12);
-            gainNode.gain.setValueAtTime(0.15, now);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
-            osc.start(now);
-            osc.stop(now + 0.12);
-        } 
-        else if (type === "COIN") {
-            osc.type = "sine";
-            osc.frequency.setValueAtTime(587.33, now); 
-            osc.frequency.setValueAtTime(880, now + 0.06);   
-            gainNode.gain.setValueAtTime(0.15, now);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
-            osc.start(now);
-            osc.stop(now + 0.2);
-        } 
-        else if (type === "ITEM") {
-            osc.type = "sine";
-            osc.frequency.setValueAtTime(523.25, now); 
-            osc.frequency.setValueAtTime(659.25, now + 0.05); 
-            osc.frequency.setValueAtTime(783.99, now + 0.1); 
-            osc.frequency.setValueAtTime(1046.50, now + 0.15); 
-            gainNode.gain.setValueAtTime(0.15, now);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-            osc.start(now);
-            osc.stop(now + 0.3);
-        } 
-        else if (type === "HIT") {
-            osc.type = "sawtooth";
-            osc.frequency.setValueAtTime(120, now);
-            osc.frequency.linearRampToValueAtTime(40, now + 0.4);
-            gainNode.gain.setValueAtTime(0.3, now);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
-            osc.start(now);
-            osc.stop(now + 0.4);
-        }
-        else if (type === "SELECT") {
-            osc.type = "square";
-            osc.frequency.setValueAtTime(300, now);
-            gainNode.gain.setValueAtTime(0.08, now);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
-            osc.start(now);
-            osc.stop(now + 0.05);
-        }
+            if (type === "JUMP") {
+                osc.type = "triangle";
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(400, now + 0.12);
+                gainNode.gain.setValueAtTime(0.15, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+                osc.start(now); osc.stop(now + 0.12);
+            } 
+            else if (type === "COIN") {
+                osc.type = "sine";
+                osc.frequency.setValueAtTime(587.33, now); 
+                osc.frequency.setValueAtTime(880, now + 0.06);   
+                gainNode.gain.setValueAtTime(0.15, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                osc.start(now); osc.stop(now + 0.2);
+            } 
+            else if (type === "ITEM") {
+                osc.type = "sine";
+                osc.frequency.setValueAtTime(523.25, now); 
+                osc.frequency.setValueAtTime(659.25, now + 0.05); 
+                osc.frequency.setValueAtTime(783.99, now + 0.1); 
+                osc.frequency.setValueAtTime(1046.50, now + 0.15); 
+                gainNode.gain.setValueAtTime(0.15, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now); osc.stop(now + 0.3);
+            } 
+            else if (type === "HIT") {
+                osc.type = "sawtooth";
+                osc.frequency.setValueAtTime(120, now);
+                osc.frequency.linearRampToValueAtTime(40, now + 0.4);
+                gainNode.gain.setValueAtTime(0.3, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                osc.start(now); osc.stop(now + 0.4);
+            }
+            else if (type === "SELECT") {
+                osc.type = "square";
+                osc.frequency.setValueAtTime(300, now);
+                gainNode.gain.setValueAtTime(0.08, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+                osc.start(now); osc.stop(now + 0.05);
+            }
+        } catch(err) {}
     }
 
-    // ==========================================================
-    // IMAGE LOADER CHECKS
-    // ==========================================================
-    let heroLoaded = false;
-    let obstacleLoaded = false;
-    let coinLoaded = false;
-    let itemLoaded = false;
+    // ==========================================
+    // GRAPHIC SAFE ASSET MANAGERS
+    // ==========================================
+    let heroLoaded = false, obstacleLoaded = false, coinLoaded = false, itemLoaded = false;
 
     const imgPlayer = new Image();
     imgPlayer.onload = () => { heroLoaded = true; };
@@ -184,7 +191,7 @@
     imgItem.src = "./item.png";
 
     // ==========================================
-    // PLAYER CONFIGURATION
+    // ENTITY ATTRIBUTE SETS
     // ==========================================
     const player = {
         x: 80,
@@ -228,13 +235,8 @@
         }
     };
 
-    // ==========================================
-    // RANDOMIZED OBSTACLE CORES
-    // ==========================================
     let obstacles = [];
-    let spawnTimer = 0;
-    let minSpawnInterval = 70; 
-    let maxSpawnInterval = 160; 
+    let spawnTimer = 0, minSpawnInterval = 70, maxSpawnInterval = 160; 
 
     class Obstacle {
         constructor() {
@@ -243,11 +245,7 @@
             this.x = canvas.width + 20;            
             this.y = GROUND_Y - this.height;
         }
-
-        update() {
-            this.x -= gameSpeed;
-        }
-
+        update() { this.x -= gameSpeed; }
         draw() {
             if (obstacleLoaded && imgObstacle.complete && imgObstacle.naturalWidth > 0) {
                 ctx.drawImage(imgObstacle, this.x, this.y, this.width, this.height);
@@ -258,54 +256,35 @@
         }
     }
 
-    // ==========================================
-    // COLLECTIBLE ITEM DESIGN
-    // ==========================================
     let collectibles = [];
     let collectibleSpawnTimer = 100;
 
     class Collectible {
         constructor(type) {
             this.type = type; 
-            this.width = 30;
-            this.height = 30;
+            this.width = 30; this.height = 30;
             this.x = canvas.width + 20;
             this.y = GROUND_Y - this.height - (Math.random() > 0.5 ? 0 : 70); 
         }
-
-        update() {
-            this.x -= gameSpeed;
-        }
-
+        update() { this.x -= gameSpeed; }
         draw() {
             if (this.type === "COIN") {
                 if (coinLoaded && imgCoin.complete && imgCoin.naturalWidth > 0) {
                     ctx.drawImage(imgCoin, this.x, this.y, this.width, this.height);
                 } else {
-                    ctx.fillStyle = "#f1c40f"; 
-                    ctx.beginPath();
-                    ctx.arc(this.x + this.width/2, this.y + this.height/2, this.width/2, 0, Math.PI*2);
-                    ctx.fill();
+                    ctx.fillStyle = "#f1c40f"; ctx.beginPath(); ctx.arc(this.x + 15, this.y + 15, 15, 0, Math.PI*2); ctx.fill();
                 }
             } else {
                 if (itemLoaded && imgItem.complete && imgItem.naturalWidth > 0) {
                     ctx.drawImage(imgItem, this.x, this.y, this.width, this.height);
                 } else {
-                    ctx.fillStyle = "#9b59b6"; 
-                    ctx.beginPath();
-                    ctx.arc(this.x + this.width/2, this.y + this.height/2, this.width/2, 0, Math.PI*2);
-                    ctx.fill();
+                    ctx.fillStyle = "#9b59b6"; ctx.beginPath(); ctx.arc(this.x + 15, this.y + 15, 15, 0, Math.PI*2); ctx.fill();
                 }
             }
         }
     }
 
-    // ==========================================
-    // PARTICLE ENGINE EXTRACTIONS
-    // ==========================================
     class Particle {
         constructor(x, y, color) {
-            this.x = x;
-            this.y = y;
-            this.color = color;
+            this.x = x; this.y = y; this.color = color;
             this.radius = 2 + Math.random() * 3;
