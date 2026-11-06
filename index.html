@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Retro Runner - Arcade Edition</title>
+    <title>Retro Runner - Core Diagnostics</title>
     <style>
         body {
             margin: 0;
             padding: 0;
             background-color: #111416;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
@@ -18,6 +19,19 @@
             overflow: hidden;
             user-select: none;
             touch-action: none;
+        }
+
+        /* Diagnostic Banner to verify code updates */
+        #diagnosticBanner {
+            background-color: #f1c40f;
+            color: #111416;
+            padding: 8px 16px;
+            font-weight: bold;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
 
         #gameContainer {
@@ -41,6 +55,9 @@
 </head>
 <body>
 
+<!-- THIS BANNER MUST APPEAR. IF IT DOES NOT, THE WEBSITE IS CACHED -->
+<div id="diagnosticBanner">✅ SYSTEM VERIFICATION: CODE UPDATE SUCCESSFUL (BUILD 3.0)</div>
+
 <div id="gameContainer">
     <canvas id="gameCanvas" width="800" height="400"></canvas>
 </div>
@@ -49,8 +66,7 @@
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
 
-    // Game state tracking matrix
-    let gameState = "MENU"; // "MENU", "PLAYING", "GAMEOVER"
+    let gameState = "MENU"; 
     let selectedDifficulty = 1; 
     let score = 0;
     let gameSpeed = 5;
@@ -72,71 +88,7 @@
     let highScore = 0;
     let totalCoins = 0;
 
-    // Safe session memory fallback variables
-    try {
-        if (typeof localStorage !== 'undefined' && localStorage !== null) {
-            if (localStorage.getItem("runner_highscore")) highScore = parseFloat(localStorage.getItem("runner_highscore"));
-            if (localStorage.getItem("runner_coinbank")) totalCoins = parseInt(localStorage.getItem("runner_coinbank"));
-        }
-    } catch (e) {}
-
-    // Native synth audio generator
-    let audioCtx = null;
-    function initAudio() {
-        if (!audioCtx) {
-            try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
-        }
-    }
-
-    function playSound(type) {
-        if (!audioCtx) return;
-        try {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            const osc = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
-            osc.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-            const now = audioCtx.currentTime;
-
-            if (type === "JUMP") {
-                osc.type = "triangle";
-                osc.frequency.setValueAtTime(150, now);
-                osc.frequency.exponentialRampToValueAtTime(400, now + 0.12);
-                gainNode.gain.setValueAtTime(0.15, now);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
-                osc.start(now); osc.stop(now + 0.12);
-            } else if (type === "COIN") {
-                osc.type = "sine";
-                osc.frequency.setValueAtTime(587.33, now); 
-                osc.frequency.setValueAtTime(880, now + 0.06);   
-                gainNode.gain.setValueAtTime(0.12, now);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
-                osc.start(now); osc.stop(now + 0.2);
-            } else if (type === "ITEM") {
-                osc.type = "sine";
-                osc.frequency.setValueAtTime(523.25, now); 
-                osc.frequency.setValueAtTime(783.99, now + 0.08); 
-                gainNode.gain.setValueAtTime(0.12, now);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
-                osc.start(now); osc.stop(now + 0.25);
-            } else if (type === "HIT") {
-                osc.type = "sawtooth";
-                osc.frequency.setValueAtTime(100, now);
-                osc.frequency.linearRampToValueAtTime(30, now + 0.35);
-                gainNode.gain.setValueAtTime(0.25, now);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
-                osc.start(now); osc.stop(now + 0.35);
-            } else if (type === "SELECT") {
-                osc.type = "square";
-                osc.frequency.setValueAtTime(280, now);
-                gainNode.gain.setValueAtTime(0.05, now);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
-                osc.start(now); osc.stop(now + 0.05);
-            }
-        } catch(e) {}
-    }
-
-    // Player object configuration map
+    // Fixed internal player model template
     const player = {
         x: 80,
         y: GROUND_Y - 50,
@@ -162,7 +114,6 @@
         },
 
         draw() {
-            // Neon cyan vector hero box
             ctx.fillStyle = "#00d2d3";
             ctx.fillRect(this.x, this.y, this.width, this.height);
             ctx.strokeStyle = "#ffffff";
@@ -187,7 +138,6 @@
         }
         update() { this.x -= gameSpeed; }
         draw() {
-            // High contrast neon crimson hazard box
             ctx.fillStyle = "#ff6b6b";
             ctx.fillRect(this.x, this.y, this.width, this.height);
             ctx.strokeStyle = "#ffffff";
@@ -248,9 +198,8 @@
             obstacles[i].update(); obstacles[i].draw();
             if (player.x < obstacles[i].x + obstacles[i].width && player.x + player.width > obstacles[i].x && player.y < obstacles[i].y + obstacles[i].height && player.y + player.height > obstacles[i].y) {
                 gameState = "GAMEOVER";
-                playSound("HIT");
                 createParticleBurst(player.x + player.width / 2, player.y + player.height / 2, "#ff6b6b");
-                if (score > highScore) { highScore = score; try { localStorage.setItem("runner_highscore", highScore); } catch(e){} }
+                if (score > highScore) highScore = score;
             }
             if (obstacles[i].x + obstacles[i].width < 0) obstacles.splice(i, 1);
         }
@@ -267,3 +216,55 @@
                 let pts = collectibles[i].type === "COIN" ? 50 : 150;
                 let col = collectibles[i].type === "COIN" ? "#f1c40f" : "#9b59b6";
                 score += pts;
+                if (collectibles[i].type === "COIN") totalCoins++;
+                createParticleBurst(collectibles[i].x + 12, collectibles[i].y + 12, col);
+                scorePopups.push({ text: `+${pts}`, x: player.x + player.width / 2, y: player.y - 10, alpha: 1, color: col });
+                collectibles.splice(i, 1);
+                continue;
+            }
+            if (collectibles[i].x + collectibles[i].width < 0) collectibles.splice(i, 1);
+        }
+
+        for (let i = particles.length - 1; i >= 0; i--) {
+            particles[i].update(); particles[i].draw();
+            if (particles[i].alpha <= 0) particles.splice(i, 1);
+        }
+
+        for (let i = scorePopups.length - 1; i >= 0; i--) {
+            scorePopups[i].y -= 0.8; scorePopups[i].alpha -= 0.025;
+            ctx.save(); ctx.globalAlpha = scorePopups[i].alpha; ctx.fillStyle = scorePopups[i].color;
+            ctx.font = "bold 14px sans-serif"; ctx.textAlign = "center";
+            ctx.fillText(scorePopups[i].text, scorePopups[i].x, scorePopups[i].y); ctx.restore();
+            if (scorePopups[i].alpha <= 0) scorePopups.splice(i, 1);
+        }
+    }
+
+    function drawBackground() {
+        let bg = "#1e272e", line = "#00d2d3";
+        if (score >= 300 && score < 700) { bg = "#4834d4"; line = "#ffbe76"; }
+        else if (score >= 700) { bg = "#0c1020"; line = "#f1c40f"; }
+        ctx.fillStyle = bg; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.fillStyle = "rgba(255, 255, 255, 0.08)";
+        for (let i = 0; i < canvas.width; i += 80) ctx.fillRect(i + 20, 40, 3, 3);
+
+        ctx.fillStyle = "#2c3e50"; ctx.fillRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
+        ctx.fillStyle = line; ctx.fillRect(0, GROUND_Y, canvas.width, 4);
+    }
+
+    function drawMainMenuScreen() {
+        ctx.fillStyle = "#111416"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#00d2d3"; ctx.font = "bold 38px sans-serif"; ctx.textAlign = "center";
+        ctx.fillText("RETRO RUNNER", canvas.width / 2, 95);
+
+        ctx.fillStyle = "#f1c40f"; ctx.font = "15px sans-serif";
+        ctx.fillText(`🏆 Record: ${Math.floor(highScore)}   |   💰 Coins: ${totalCoins}`, canvas.width / 2, 140);
+
+        ctx.fillStyle = "#ffffff"; ctx.font = "16px sans-serif";
+        ctx.fillText("TAP DIFFICULTY TO START", canvas.width / 2, 215);
+
+        const diffs = ["EASY", "MEDIUM", "HARD"];
+        for (let i = 0; i < diffs.length; i++) {
+            let bX = canvas.width / 2 - 120 + (i * 120);
+            let bY = 250;
+            if (i === selectedDifficulty) {
