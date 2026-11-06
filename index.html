@@ -2,252 +2,293 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Retro Cyber Runner - Cloud Host Build</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retro Endless Runner with Savings Track</title>
     <style>
         body {
             margin: 0;
             padding: 0;
-            background-color: #04050a;
-            font-family: 'Courier New', Courier, monospace;
+            background-color: #1a1a1a;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            width: 100vw;
-            overflow: hidden;
             color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
             user-select: none;
-            -webkit-user-select: none;
-            touch-action: none;
         }
 
         #gameContainer {
             position: relative;
-            width: 100%;
-            max-width: 430px;
-            height: 100%;
-            max-height: 780px;
-            box-shadow: 0 0 50px rgba(56, 189, 248, 0.5);
-            aspect-ratio: 9 / 16;
-            background-color: #060913;
-            border: 2px solid #101726;
-            border-radius: 14px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
             overflow: hidden;
         }
 
         canvas {
+            background-color: #2c3e50;
             display: block;
-            width: 100%;
-            height: 100%;
         }
     </style>
 </head>
 <body>
 
 <div id="gameContainer">
-    <canvas id="gameCanvas"></canvas>
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
 </div>
 
 <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
 
-    function resizeCanvas() {
-        const container = document.getElementById('gameContainer');
-        canvas.width = container.clientWidth;
-        canvas.height = container.clientHeight;
-    }
-    resizeCanvas();
-
-    // ==========================================
-    // WEB AUDIO SYNTHESIZERS (ZERO-FILE SOUNDS)
-    // ==========================================
-    const AudioEngine = {
-        ctx: null,
-        init() {
-            if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-        },
-        play(type) {
-            this.init();
-            if (!this.ctx) return;
-            const osc = this.ctx.createOscillator();
-            const gain = this.ctx.createGain();
-            osc.connect(gain); gain.connect(this.ctx.destination);
-            const now = this.ctx.currentTime;
-
-            if (type === 'jump') {
-                osc.type = 'square';
-                osc.frequency.setValueAtTime(140, now);
-                osc.frequency.exponentialRampToValueAtTime(420, now + 0.12);
-                gain.gain.setValueAtTime(0.06, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
-                osc.start(now); osc.stop(now + 0.12);
-            } else if (type === 'coin') {
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(620, now);
-                osc.frequency.setValueAtTime(930, now + 0.06);
-                gain.gain.setValueAtTime(0.08, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
-                osc.start(now); osc.stop(now + 0.22);
-            } else if (type === 'shield') {
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(250, now);
-                osc.frequency.exponentialRampToValueAtTime(550, now + 0.25);
-                gain.gain.setValueAtTime(0.08, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
-                osc.start(now); osc.stop(now + 0.25);
-            } else if (type === 'laser') {
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(800, now);
-                osc.frequency.linearRampToValueAtTime(150, now + 0.15);
-                gain.gain.setValueAtTime(0.05, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
-                osc.start(now); osc.stop(now + 0.15);
-            } else if (type === 'crash') {
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(100, now);
-                osc.frequency.linearRampToValueAtTime(20, now + 0.4);
-                gain.gain.setValueAtTime(0.2, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
-                osc.start(now); osc.stop(now + 0.4);
-            }
-        }
-    };
-
-    // ==========================================
-    // GAME CORE CONFIGURATIONS & STATE REGISTERS
-    // ==========================================
-    let currentMenu = 'DIFFICULTY'; 
-    const difficultySettings = {
-        EASY:   { speed: 3.5, accel: 0.0001, spawnMod: 1.3 },
-        MEDIUM: { speed: 5.0, accel: 0.0003, spawnMod: 1.0 },
-        HARD:   { speed: 7.0, accel: 0.0006, spawnMod: 0.72 }
-    };
-    let activeDiff = 'MEDIUM';
-
-    let GRAVITY = 0.5;
-    let gameSpeed = 5;
-    let speedAccel = 0.0003;
+    // Game state tracking
+    let gameState = "PLAYING"; 
     let score = 0;
-    let animationFrameId = null;
-    let lastObstacleTime = 0;
-    let spawnDelay = 1500;
+    let gameSpeed = 5;
+    const MAX_SPEED = 15;
+    const SPEED_INCREMENT = 0.001;
 
-    let highScore = localStorage.getItem('cc_runner_hi') ? parseInt(localStorage.getItem('cc_runner_hi')) : 0;
-    let totalCoins = localStorage.getItem('cc_total_coins') ? parseInt(localStorage.getItem('cc_total_coins')) : 0;
-    let magnetLevel = localStorage.getItem('cc_shop_mag') ? parseInt(localStorage.getItem('cc_shop_mag')) : 1; 
-    let jumpLevel = localStorage.getItem('cc_shop_jmp') ? parseInt(localStorage.getItem('cc_shop_jmp')) : 1; 
+    // Environmental constants
+    const GROUND_Y = canvas.height - 60;
+    const GRAVITY = 0.6;
 
-    let coinCombo = 0;
-    let comboTimer = 0;
-    const COMBO_DURATION = 120;
+    // ===================================================
+    // PERSISTENT LOCAL STORAGE (HIGH SCORE TRACKING)
+    // ===================================================
+    // Attempt to pull any previously saved records out of browser storage
+    let highScore = localStorage.getItem("runner_highscore") ? parseFloat(localStorage.getItem("runner_highscore")) : 0;
 
-    let shieldActive = false;
-    let shieldTimer = 0;
-    let maxShieldDuration = 300 + (magnetLevel - 1) * 90; 
+    // ===================================================
+    // IMAGE ASSET LOADING SYSTEM (LINK YOUR 4 GRAPHICS HERE)
+    // ===================================================
+    // To make these load, replace the names inside quotes with your exact filenames!
+    
+    const imgPlayerRun1 = new Image();
+    imgPlayerRun1.src = "player_run1.png"; // Change to your first player image name
 
-    let activeSkinIndex = 0;
-    const customSkins = [
-        { name: 'NEON SLIME', color: '#4ade80', trailColor: 'rgba(74, 222, 128,' },
-        { name: 'CYBER VAPOR', color: '#22d3ee', trailColor: 'rgba(34, 211, 238,' }
-    ];
+    const imgPlayerRun2 = new Image();
+    imgPlayerRun2.src = "player_run2.png"; // Change to your second player image name (for running animation)
 
-    let player;
-    let obstacles = [];
-    let coins = [];
-    let items = [];
-    let particles = [];
-    let lasers = [];
-    let bossEnemy = null;
-    let shareFeedbackTimer = 0;
+    const imgObstacle = new Image();
+    imgObstacle.src = "obstacle.png";       // Change to your obstacle image name
 
-    function getUpgradeCost(level) {
-        if (level >= 5) return 'MAX';
-        return level * 150; 
-    }
+    const imgBackground = new Image();
+    imgBackground.src = "background.png";   // Change to your environment background image name
 
-    // ==========================================
-    // CLOUD ASSET FILE MANAGER
-    // ==========================================
-    const sprites = { playerSheet: new Image(), obstacle: new Image(), coin: new Image(), item: new Image() };
-    let assetsReady = { playerSheet: false, obstacle: false, coin: false, item: false };
-
-    sprites.playerSheet.onload = () => { assetsReady.playerSheet = true; };
-    sprites.obstacle.onload = () => { assetsReady.obstacle = true; };
-    sprites.coin.onload = () => { assetsReady.coin = true; };
-    sprites.item.onload = () => { assetsReady.item = true; };
-
-    sprites.playerSheet.src = 'hero.png'; 
-    sprites.obstacle.src = 'obstacle.png'; 
-    sprites.coin.src = 'coin.png'; 
-    sprites.item.src = 'item.png';
-
-    // ==========================================
-    // VISUAL EFFECT SYSTEMS
-    // ==========================================
-    class Particle {
-        constructor(x, y, color) {
-            this.x = x; this.y = y;
-            this.vx = (Math.random() - 0.5) * 6;
-            this.vy = (Math.random() - 0.5) * 6 - 2;
-            this.radius = 2 + Math.random() * 3;
-            this.color = color; this.alpha = 1;
-            this.decay = 0.02 + Math.random() * 0.03;
-        }
-        update() { this.x += this.vx; this.y += this.vy; this.alpha -= this.decay; }
-        draw() {
-            ctx.save(); ctx.globalAlpha = this.alpha; ctx.fillStyle = this.color;
-            ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    // Helper logic to verify if your image assets successfully found their path
+    let assetsLoaded = false;
+    let loadedCount = 0;
+    const totalAssets = 4;
+    
+    function onAssetLoad() {
+        loadedCount++;
+        if (loadedCount === totalAssets) {
+            assetsLoaded = true;
         }
     }
-    function createExplosion(x, y, color, count = 12) {
-        for (let i = 0; i < count; i++) particles.push(new Particle(x, y, color));
-    }
+    
+    imgPlayerRun1.onload = onAssetLoad;
+    imgPlayerRun2.onload = onAssetLoad;
+    imgObstacle.onload = onAssetLoad;
+    imgBackground.onload = onAssetLoad;
 
-    class BackgroundSystem {
-        constructor() { this.hue = 0; }
+    // Background horizontal scroll position variable
+    let bgScrollX = 0;
+
+    // ==========================================
+    // PLAYER CONFIGURATION & ANIMATION LOGIC
+    // ==========================================
+    const player = {
+        x: 80,
+        y: GROUND_Y - 50,
+        width: 45,
+        height: 55,
+        velocityY: 0,
+        jumpForce: -12,
+        isGrounded: false,
+        jumpCount: 0,
+        maxJumps: 2,
+        
+        // Frame pacing for running animation loop
+        animTimer: 0,
+        currentFrame: 1,
+
         update() {
-            if (bossEnemy) { this.hue = 0; return; } 
-            this.hue = (score * 0.15) % 360;
-        }
-        draw() {
-            let gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-            if (bossEnemy) {
-                gradient.addColorStop(0, '#1a0505'); gradient.addColorStop(1, '#080101');
+            this.velocityY += GRAVITY;
+            this.y += this.velocityY;
+
+            if (this.y + this.height >= GROUND_Y) {
+                this.y = GROUND_Y - this.height;
+                this.velocityY = 0;
+                this.isGrounded = true;
+                this.jumpCount = 0;
+                
+                // Track pacing ticks to swap legs while moving forward
+                this.animTimer += gameSpeed * 0.05;
+                if (this.animTimer > 1) {
+                    this.currentFrame = this.currentFrame === 1 ? 2 : 1;
+                    this.animTimer = 0;
+                }
             } else {
-                gradient.addColorStop(0, `hsl(${this.hue}, 40%, 4%)`); gradient.addColorStop(1, `hsl(${(this.hue + 60) % 360}, 45%, 10%)`);
+                this.isGrounded = false;
             }
-            ctx.fillStyle = gradient; ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.strokeStyle = bossEnemy ? 'rgba(239, 68, 68, 0.05)' : `hsla(${this.hue}, 80%, 60%, 0.04)`;
-            ctx.lineWidth = 1;
-            for (let i = 0; i < canvas.width; i += 40) {
-                ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
+        },
+
+        draw() {
+            // Determine active custom image texture based on animation ticks
+            let activeSprite = this.currentFrame === 1 ? imgPlayerRun1 : imgPlayerRun2;
+
+            // If browser found your files, render them. If not, use the fallback shape.
+            if (assetsLoaded && activeSprite.complete && activeSprite.naturalWidth !== 0) {
+                ctx.drawImage(activeSprite, this.x, this.y, this.width, this.height);
+            } else {
+                ctx.fillStyle = "#3498db"; 
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+                ctx.fillStyle = "#ffffff";
+                ctx.fillRect(this.x + 28, this.y + 10, 10, 8);
+            }
+        },
+
+        jump() {
+            if (this.isGrounded || this.jumpCount < this.maxJumps) {
+                this.velocityY = this.jumpForce;
+                this.jumpCount++;
+            }
+        },
+
+        reset() {
+            this.y = GROUND_Y - this.height;
+            this.velocityY = 0;
+            this.isGrounded = true;
+            this.jumpCount = 0;
+        }
+    };
+
+    // ==========================================
+    // OBSTACLE MANAGEMENT
+    // ==========================================
+    let obstacles = [];
+    let spawnTimer = 0;
+    let minSpawnInterval = 60; 
+    let maxSpawnInterval = 150; 
+
+    class Obstacle {
+        constructor() {
+            this.width = 35;
+            this.height = 45;
+            this.x = canvas.width + 20;            
+            this.y = GROUND_Y - this.height;
+        }
+
+        update() {
+            this.x -= gameSpeed;
+        }
+
+        draw() {
+            if (assetsLoaded && imgObstacle.complete && imgObstacle.naturalWidth !== 0) {
+                ctx.drawImage(imgObstacle, this.x, this.y, this.width, this.height);
+            } else {
+                ctx.fillStyle = "#e74c3c"; 
+                ctx.fillRect(this.x, this.y, this.width, this.height);
             }
         }
     }
-    const bgEngine = new BackgroundSystem();
 
-    // ==========================================
-    // ENTITIES & LOOPS
-    // ==========================================
-    class Player {
-        constructor() {
-            this.width = 44; this.height = 54; this.x = 40;
-            this.groundY = canvas.height - this.height - 80; this.y = this.groundY;
-            this.velocityY = 0;
-            this.jumpForce = -12 - (jumpLevel - 1) * 0.5;
-            this.jumpCount = 0; this.maxJumps = 2;
-            this.frameIndex = 0; this.tickCount = 0; this.ticksPerFrame = 6; this.numberOfFrames = 4;
-            this.trail = []; this.maxTrailSegments = 6;
+    function manageObstacles() {
+        spawnTimer--;
+        let dynamicInterval = maxSpawnInterval - ((gameSpeed / MAX_SPEED) * (maxSpawnInterval - minSpawnInterval));
+        
+        if (spawnTimer <= 0) {
+            obstacles.push(new Obstacle());
+            spawnTimer = dynamicInterval + (Math.random() * 50);
         }
-        jump() {
-            if (this.jumpCount < this.maxJumps) {
-                AudioEngine.play('jump');
-                this.velocityY = this.jumpForce; this.jumpCount++;
-                createExplosion(this.x + this.width / 2, this.y + this.height, customSkins[activeSkinIndex].color, 6);
+
+        for (let i = obstacles.length - 1; i >= 0; i--) {
+            obstacles[i].update();
+            obstacles[i].draw();
+
+            // Strict Collision AABB Check
+            if (
+                player.x < obstacles[i].x + obstacles[i].width &&
+                player.x + player.width > obstacles[i].x &&
+                player.y < obstacles[i].y + obstacles[i].height &&
+                player.y + player.height > obstacles[i].y
+            ) {
+                gameState = "GAMEOVER";
+                handleHighScore();
+            }
+
+            if (obstacles[i].x + obstacles[i].width < 0) {
+                obstacles.splice(i, 1);
             }
         }
-        update() {
-            this.velocityY += GRAVITY; this.y += this.velocityY;
-            if (this.y >= this.groundY) { this.y = this.groundY; this.velocityY = 0; this.jumpCount = 0; }
+    }
+
+    // High Score Processing Local Registry Engine
+    function handleHighScore() {
+        if (score > highScore) {
+            highScore = score;
+            localStorage.setItem("runner_highscore", highScore);
+        }
+    }
+
+    // ==========================================
+    // ENVIRONMENT SCROLL & RENDER
+    // ==========================================
+    function drawBackground() {
+        if (assetsLoaded && imgBackground.complete && imgBackground.naturalWidth !== 0) {
+            if (gameState === "PLAYING") {
+                bgScrollX -= gameSpeed * 0.5; // Scroll background layer slower for depth
+            }
+            if (bgScrollX <= -canvas.width) {
+                bgScrollX = 0;
+            }
+            // Seamless looping texture technique
+            ctx.drawImage(imgBackground, bgScrollX, 0, canvas.width, canvas.height);
+            ctx.drawImage(imgBackground, bgScrollX + canvas.width, 0, canvas.width, canvas.height);
+        } else {
+            // Sky standard clear fallback
+            ctx.fillStyle = "#2c3e50";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // Standard clean flat collision ground overlay deck
+        ctx.fillStyle = "#34495e";
+        ctx.fillRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
+        ctx.fillStyle = "#2ecc71"; 
+        ctx.fillRect(0, GROUND_Y, canvas.width, 6);
+    }
+
+    function drawUI() {
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 18px 'Segoe UI', sans-serif";
+        ctx.textAlign = "left";
+        ctx.fillText(`SCORE: ${Math.floor(score)}`, 20, 35);
+        
+        ctx.fillStyle = "#f1c40f"; // Gold text for highscore distinction
+        ctx.textAlign = "right";
+        ctx.fillText(`HI-SCORE: ${Math.floor(highScore)}`, canvas.width - 20, 35);
+    }
+
+    function drawGameOverScreen() {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = "#e74c3c";
+        ctx.font = "bold 46px 'Segoe UI', sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 30);
+
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "22px 'Segoe UI', sans-serif";
+        ctx.fillText(`Final Run Score: ${Math.floor(score)}`, canvas.width / 2, canvas.height / 2 + 15);
+        
+        ctx.fillStyle = "#f1c40f";
+        ctx.fillText(`All-Time Record: ${Math.floor(highScore)}`, canvas.width / 2, canvas.height / 2 + 50);
+
+        ctx.fillStyle = "#bdc3c7";
+        ctx.font = "15px 'Segoe UI', sans-serif";
+        ctx.fillText("Press [SPACEBAR] or CLICK SCREEN to Try Again", canvas.width / 2, canvas.height / 2 + 95);
+    }
+
