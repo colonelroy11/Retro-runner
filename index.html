@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Retro Endless Runner</title>
+    <title>Retro Endless Runner - Ultimate Master Edition</title>
     <style>
         body {
             margin: 0;
@@ -42,22 +42,104 @@
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
 
-    // Game state tracking
-    let gameState = "PLAYING"; 
+    // ==========================================
+    // EXTENSIVE STATE TRACKING MATRIX
+    // ==========================================
+    let gameState = "MENU"; // States: "MENU", "PLAYING", "GAMEOVER"
+    let selectedDifficulty = 1; // 0 = Easy, 1 = Medium, 2 = Hard
     let score = 0;
     let gameSpeed = 5;
-    const MAX_SPEED = 15;
-    const SPEED_INCREMENT = 0.001;
+    let maxSpeedSetting = 15;
+    let speedIncrementSetting = 0.001;
 
     // Environmental constants
     const GROUND_Y = canvas.height - 60;
     const GRAVITY = 0.6;
 
-    // Persistent High Score System via Browser LocalStorage
+    // Visual tracking arrays
+    let scorePopups = [];
+    let particles = [];
+
+    // ==========================================
+    // PERSISTENT STORAGE SYSTEMS
+    // ==========================================
     let highScore = localStorage.getItem("runner_highscore") ? parseFloat(localStorage.getItem("runner_highscore")) : 0;
+    let totalCoins = localStorage.getItem("runner_coinbank") ? parseInt(localStorage.getItem("runner_coinbank")) : 0;
+
+    // ==========================================
+    // WEB AUDIO OSCILLATOR SYNTHESIZER
+    // ==========================================
+    let audioCtx = null;
+
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+    }
+
+    function playSound(type) {
+        if (!audioCtx) return;
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        const now = audioCtx.currentTime;
+
+        if (type === "JUMP") {
+            osc.type = "triangle";
+            osc.frequency.setValueAtTime(150, now);
+            osc.frequency.exponentialRampToValueAtTime(400, now + 0.12);
+            gainNode.gain.setValueAtTime(0.15, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+            osc.start(now);
+            osc.stop(now + 0.12);
+        } 
+        else if (type === "COIN") {
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(587.33, now); 
+            osc.frequency.setValueAtTime(880, now + 0.06);   
+            gainNode.gain.setValueAtTime(0.15, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+            osc.start(now);
+            osc.stop(now + 0.2);
+        } 
+        else if (type === "ITEM") {
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(523.25, now); 
+            osc.frequency.setValueAtTime(659.25, now + 0.05); 
+            osc.frequency.setValueAtTime(783.99, now + 0.1); 
+            osc.frequency.setValueAtTime(1046.50, now + 0.15); 
+            gainNode.gain.setValueAtTime(0.15, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+            osc.start(now);
+            osc.stop(now + 0.3);
+        } 
+        else if (type === "HIT") {
+            osc.type = "sawtooth";
+            osc.frequency.setValueAtTime(120, now);
+            osc.frequency.linearRampToValueAtTime(40, now + 0.4);
+            gainNode.gain.setValueAtTime(0.3, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+            osc.start(now);
+            osc.stop(now + 0.4);
+        }
+        else if (type === "SELECT") {
+            osc.type = "square";
+            osc.frequency.setValueAtTime(300, now);
+            gainNode.gain.setValueAtTime(0.08, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+            osc.start(now);
+            osc.stop(now + 0.05);
+        }
+    }
 
     // ==========================================================
-    // EXACT FILENAME MATCHING FROM YOUR GITHUB REPOSITORY
+    // REPOSITORY IMAGE LOADER MAPS
     // ==========================================================
     const imgPlayer = new Image();
     imgPlayer.src = "./hero.png"; 
@@ -77,7 +159,7 @@
     const player = {
         x: 80,
         y: GROUND_Y - 60,
-        width: 50,  // Proportional box size for image rendering
+        width: 50,  
         height: 60,
         velocityY: 0,
         jumpForce: -13,
@@ -103,15 +185,21 @@
             if (imgPlayer.complete && imgPlayer.naturalWidth !== 0) {
                 ctx.drawImage(imgPlayer, this.x, this.y, this.width, this.height);
             } else {
-                // Vector fallback box visible if assets fail to link
                 ctx.fillStyle = "#3498db"; 
                 ctx.fillRect(this.x, this.y, this.width, this.height);
             }
+        },
+
+        reset() {
+            this.y = GROUND_Y - this.height;
+            this.velocityY = 0;
+            this.isGrounded = true;
+            this.jumpCount = 0;
         }
     };
 
     // ==========================================
-    // OBSTACLE MANAGEMENT
+    // RANDOMIZED OBSTACLE MANIFESTS
     // ==========================================
     let obstacles = [];
     let spawnTimer = 0;
@@ -120,8 +208,8 @@
 
     class Obstacle {
         constructor() {
-            this.width = 40;
-            this.height = 50;
+            this.width = 30 + Math.random() * 25;  
+            this.height = 35 + Math.random() * 30; 
             this.x = canvas.width + 20;            
             this.y = GROUND_Y - this.height;
         }
@@ -140,158 +228,82 @@
         }
     }
 
-    function manageObstacles() {
+    // ==========================================
+    // COLLECTIBLE ITEM DESIGN
+    // ==========================================
+    let collectibles = [];
+    let collectibleSpawnTimer = 100;
+
+    class Collectible {
+        constructor(type) {
+            this.type = type; 
+            this.width = 30;
+            this.height = 30;
+            this.x = canvas.width + 20;
+            this.y = GROUND_Y - this.height - (Math.random() > 0.5 ? 0 : 70); 
+        }
+
+        update() {
+            this.x -= gameSpeed;
+        }
+
+        draw() {
+            let activeImg = this.type === "COIN" ? imgCoin : imgItem;
+            if (activeImg.complete && activeImg.naturalWidth !== 0) {
+                ctx.drawImage(activeImg, this.x, this.y, this.width, this.height);
+            } else {
+                ctx.fillStyle = this.type === "COIN" ? "#f1c40f" : "#9b59b6";
+                ctx.beginPath();
+                ctx.arc(this.x + this.width/2, this.y + this.height/2, this.width/2, 0, Math.PI*2);
+                ctx.fill();
+            }
+        }
+    }
+
+    // ==========================================
+    // ENHANCED PARTICLE SYSTEM ENGINE
+    // ==========================================
+    class Particle {
+        constructor(x, y, color) {
+            this.x = x;
+            this.y = y;
+            this.color = color;
+            this.radius = 2 + Math.random() * 3;
+            this.vx = (Math.random() - 0.5) * 6;
+            this.vy = (Math.random() - 0.7) * 6; 
+            this.alpha = 1;
+            this.decay = 0.02 + Math.random() * 0.02;
+        }
+
+        update() {
+            this.x += this.vx;
+            this.y += this.vy;
+            this.vy += 0.1; 
+            this.alpha -= this.decay;
+        }
+
+        draw() {
+            ctx.save();
+            ctx.globalAlpha = this.alpha;
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+    }
+
+    function createParticleBurst(x, y, color) {
+        for (let i = 0; i < 15; i++) {
+            particles.push(new Particle(x, y, color));
+        }
+    }
+
+    // ==========================================
+    // CORE SCENE RUNTIME UPDATE LOOPS
+    // ==========================================
+    function manageEntities() {
+        // --- 1. Handle Obstacles ---
         spawnTimer--;
-        let dynamicInterval = maxSpawnInterval - ((gameSpeed / MAX_SPEED) * (maxSpawnInterval - minSpawnInterval));
-        
+        let dynamicInterval = maxSpawnInterval - ((gameSpeed / maxSpeedSetting) * (maxSpawnInterval - minSpawnInterval));
         if (spawnTimer <= 0) {
-            obstacles.push(new Obstacle());
-            spawnTimer = dynamicInterval + (Math.random() * 60);
-        }
-
-        for (let i = obstacles.length - 1; i >= 0; i--) {
-            obstacles[i].update();
-            obstacles[i].draw();
-
-            // Collision Processing
-            if (
-                player.x < obstacles[i].x + obstacles[i].width &&
-                player.x + player.width > obstacles[i].x &&
-                player.y < obstacles[i].y + obstacles[i].height &&
-                player.y + player.height > obstacles[i].y
-            ) {
-                gameState = "GAMEOVER";
-                handleHighScore();
-            }
-
-            if (obstacles[i].x + obstacles[i].width < 0) {
-                obstacles.splice(i, 1);
-            }
-        }
-    }
-
-    function handleHighScore() {
-        if (score > highScore) {
-            highScore = score;
-            localStorage.setItem("runner_highscore", highScore);
-        }
-    }
-
-    // ==========================================
-    // ENVIRONMENT SCENERY RENDERING
-    // ==========================================
-    function drawBackground() {
-        // Since background.png doesn't exist, we render a stylized retro sky grid background
-        ctx.fillStyle = "#1e272e";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // Subtle geometric sky stars/details
-        ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
-        for (let i = 0; i < canvas.width; i += 80) {
-            ctx.fillRect(i + 20, 50, 4, 4);
-            ctx.fillRect(i + 60, 150, 2, 2);
-        }
-
-        // Base ground floor layer platform deck
-        ctx.fillStyle = "#2d3436";
-        ctx.fillRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
-        
-        // High contrast ground floor separating line stripe
-        ctx.fillStyle = "#00d2d3"; 
-        ctx.fillRect(0, GROUND_Y, canvas.width, 6);
-    }
-
-    function drawUI() {
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "bold 18px 'Segoe UI', sans-serif";
-        ctx.textAlign = "left";
-        ctx.fillText(`SCORE: ${Math.floor(score)}`, 20, 35);
-        
-        ctx.fillStyle = "#f1c40f"; 
-        ctx.textAlign = "right";
-        ctx.fillText(`HI-SCORE: ${Math.floor(highScore)}`, canvas.width - 20, 35);
-    }
-
-    function drawGameOverScreen() {
-        ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        ctx.fillStyle = "#e74c3c";
-        ctx.font = "bold 46px 'Segoe UI', sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 30);
-
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "22px 'Segoe UI', sans-serif";
-        ctx.fillText(`Final Run Score: ${Math.floor(score)}`, canvas.width / 2, canvas.height / 2 + 15);
-        
-        ctx.fillStyle = "#f1c40f";
-        ctx.fillText(`All-Time Record: ${Math.floor(highScore)}`, canvas.width / 2, canvas.height / 2 + 50);
-
-        ctx.fillStyle = "#bdc3c7";
-        ctx.font = "15px 'Segoe UI', sans-serif";
-        ctx.fillText("Press [SPACEBAR] or CLICK HERE to Try Again", canvas.width / 2, canvas.height / 2 + 95);
-    }
-
-    // ==========================================
-    // INPUT ENGINES
-    // ==========================================
-    function triggerAction() {
-        if (gameState === "PLAYING") {
-            player.jump();
-        } else if (gameState === "GAMEOVER") {
-            resetGame();
-        }
-    }
-
-    window.addEventListener("keydown", (e) => {
-        if (e.code === "Space") {
-            e.preventDefault();
-            triggerAction();
-        }
-    });
-
-    canvas.addEventListener("mousedown", (e) => {
-        if (e.button === 0) triggerAction();
-    });
-    canvas.addEventListener("touchstart", (e) => {
-        e.preventDefault();
-        triggerAction();
-    });
-
-    function resetGame() {
-        obstacles = [];
-        score = 0;
-        gameSpeed = 5;
-        spawnTimer = 0;
-        player.reset();
-        gameState = "PLAYING";
-    }
-
-    function gameLoop() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        drawBackground();
-
-        if (gameState === "PLAYING") {
-            if (gameSpeed < MAX_SPEED) gameSpeed += SPEED_INCREMENT;
-            player.update();
-            score += 0.15;
-
-            player.draw();
-            manageObstacles();
-            drawUI();
-        } else if (gameState === "GAMEOVER") {
-            player.draw();
-            for (let obs of obstacles) obs.draw();
-            drawUI();
-            drawGameOverScreen();
-        }
-
-        requestAnimationFrame(gameLoop);
-    }
-
-    gameLoop();
-</script>
-
-</body>
-</html>
