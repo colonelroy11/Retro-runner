@@ -2,9 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Retro Runner Loader</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Retro Runner - Complete Edition</title>
     <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
         body {
             margin: 0;
             padding: 0;
@@ -12,137 +17,263 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            font-family: Arial, sans-serif;
+            min-height: 100vh;
             color: #ffffff;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            user-select: none;
+            touch-action: none;
         }
-        #loader {
-            font-size: 18px;
-            font-weight: bold;
-            color: #00d2d3;
+
+        #gameContainer {
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+            border: 2px solid #00d2d3;
+            border-radius: 8px;
+            overflow: hidden;
+            width: 92vw;
+            height: 85vh;
+            max-width: 420px; 
+            max-height: 740px;
+            background-color: #111416;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
         }
     </style>
 </head>
 <body>
 
-<div id="loader">Bypassing browser cache and initializing game loop...</div>
+<div id="gameContainer">
+    <canvas id="gameCanvas" width="400" height="700"></canvas>
+</div>
 
 <script>
-    // This function forces the browser to pull a fresh copy directly from GitHub's servers
-    async function loadFreshGame() {
-        try {
-            // Appending a random timestamp prevents the browser from loading a cached version
-            const cacheBuster = "?t=" + new Date().getTime();
-            const response = await fetch("https://githubusercontent.com" + cacheBuster);
-            const rawHtml = await response.text();
-            
-            // Isolate the game content from this loader shell
-            if (rawHtml.includes("btnEasy")) {
-                document.open();
-                document.write(rawHtml);
-                document.close();
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    canvas.width = 400;
+    canvas.height = 700;
+
+    let gameState = "MENU"; 
+    let selectedDifficulty = 1; 
+    let score = 0;
+    let gameSpeed = 5;
+    let maxSpeedSetting = 15;
+    let speedIncrementSetting = 0.001;
+
+    const GROUND_Y = canvas.height - 120;
+    const GRAVITY = 0.6;
+
+    let scorePopups = [];
+    let particles = [];
+    let obstacles = [];
+    let collectibles = [];
+    let spawnTimer = 0;
+    let collectibleSpawnTimer = 100;
+
+    let highScore = 0;
+    let totalCoins = 0;
+
+    // ==========================================
+    // SAFE IMAGE LOADING WITH AUTO FALLBACKS
+    // ==========================================
+    let heroLoaded = false;
+    let obstacleLoaded = false;
+    let coinLoaded = false;
+    let itemLoaded = false;
+
+    const imgPlayer = new Image();
+    imgPlayer.onload = () => { heroLoaded = true; };
+    imgPlayer.src = "./hero.png";
+
+    const imgObstacle = new Image();
+    imgObstacle.onload = () => { obstacleLoaded = true; };
+    imgObstacle.src = "./obstacle.png";
+
+    const imgCoin = new Image();
+    imgCoin.onload = () => { coinLoaded = true; };
+    imgCoin.src = "./coin.png";
+
+    const imgItem = new Image();
+    imgItem.onload = () => { itemLoaded = true; };
+    imgItem.src = "./item.png";
+
+    const player = {
+        x: 60,
+        y: GROUND_Y - 50,
+        width: 40,
+        height: 50,
+        velocityY: 0,
+        jumpForce: -13.5,
+        isGrounded: false,
+        jumpCount: 0,
+        maxJumps: 2,
+
+        update() {
+            this.velocityY += GRAVITY;
+            this.y += this.velocityY;
+            if (this.y + this.height >= GROUND_Y) {
+                this.y = GROUND_Y - this.height;
+                this.velocityY = 0;
+                this.isGrounded = true;
+                this.jumpCount = 0;
             } else {
-                // Fallback to injecting the direct engine script if raw layout fails
-                loadEngineDirectly();
+                this.isGrounded = false;
             }
-        } catch (error) {
-            loadEngineDirectly();
+        },
+
+        draw() {
+            if (heroLoaded && imgPlayer.complete && imgPlayer.naturalWidth > 0) {
+                ctx.drawImage(imgPlayer, this.x, this.y, this.width, this.height);
+            } else {
+                ctx.fillStyle = "#00d2d3";
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+                ctx.strokeStyle = "#ffffff";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(this.x, this.y, this.width, this.height);
+            }
+        }
+    };
+
+    class Obstacle {
+        constructor() {
+            this.width = 30;
+            this.height = 40;
+            this.x = canvas.width + 20;
+            this.y = GROUND_Y - this.height;
+        }
+        update() { this.x -= gameSpeed; }
+        draw() {
+            if (obstacleLoaded && imgObstacle.complete && imgObstacle.naturalWidth > 0) {
+                ctx.drawImage(imgObstacle, this.x, this.y, this.width, this.height);
+            } else {
+                ctx.fillStyle = "#ff6b6b";
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+                ctx.strokeStyle = "#ffffff";
+                ctx.strokeRect(this.x, this.y, this.width, this.height);
+            }
         }
     }
 
-    function loadEngineDirectly() {
-        document.body.innerHTML = `
-            <div id="gameContainer" style="position:relative;box-shadow:0 10px 30px rgba(0,0,0,0.7);border:2px solid #00d2d3;border-radius:8px;overflow:hidden;width:92vw;height:85vh;max-width:420px;max-height:740px;background-color:#111416;margin:auto;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:20px;">
-                <h1 style="color:#00d2d3;font-size:32px;margin:0 0 10px 0;">RETRO RUNNER</h1>
-                <div style="color:#f1c40f;font-size:14px;margin-bottom:30px;">🎮 Touch Engine Active</div>
-                <div style="font-size:16px;margin-bottom:20px;font-weight:bold;">SELECT DIFFICULTY:</div>
-                <div style="display:flex;flex-direction:column;gap:12px;width:80%;max-width:200px;">
-                    <button id="e" style="background:#2c3e50;border:2px solid #00d2d3;color:#ffffff;padding:12px 20px;font-size:14px;font-weight:bold;border-radius:6px;cursor:pointer;">EASY</button>
-                    <button id="m" style="background:#2c3e50;border:2px solid #00d2d3;color:#ffffff;padding:12px 20px;font-size:14px;font-weight:bold;border-radius:6px;cursor:pointer;">MEDIUM</button>
-                    <button id="h" style="background:#2c3e50;border:2px solid #00d2d3;color:#ffffff;padding:12px 20px;font-size:14px;font-weight:bold;border-radius:6px;cursor:pointer;">HARD</button>
-                </div>
-                <canvas id="gameCanvas" width="400" height="700" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;z-index:10;"></canvas>
-            </div>
-        `;
-
-        const canvas = document.getElementById("gameCanvas");
-        const ctx = canvas.getContext("2d");
-        let gameState = "PLAYING";
-        let score = 0;
-        let gameSpeed = 5;
-        const GROUND_Y = 580;
-        let obstacles = [];
-        let collectibles = [];
-        let spawnTimer = 0;
-
-        const player = {
-            x: 60, y: GROUND_Y - 50, width: 40, height: 50, velocityY: 0, jumpForce: -13.5, isGrounded: false, jumpCount: 0, maxJumps: 2,
-            update() {
-                this.velocityY += 0.6; this.y += this.velocityY;
-                if (this.y + this.height >= GROUND_Y) { this.y = GROUND_Y - this.height; this.velocityY = 0; this.isGrounded = true; this.jumpCount = 0; }
-                else { this.isGrounded = false; }
-            },
-            draw() { ctx.fillStyle = "#00d2d3"; ctx.fillRect(this.x, this.y, this.width, this.height); ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 2; ctx.strokeRect(this.x, this.y, this.width, this.height); }
-        };
-
-        class Obstacle {
-            constructor() { this.width = 30; this.height = 40; this.x = canvas.width + 20; this.y = GROUND_Y - this.height; }
-            update() { this.x -= gameSpeed; }
-            draw() { ctx.fillStyle = "#ff6b6b"; ctx.fillRect(this.x, this.y, this.width, this.height); ctx.strokeStyle = "#ffffff"; ctx.strokeRect(this.x, this.y, this.width, this.height); }
+    class Collectible {
+        constructor(type) {
+            this.type = type;
+            this.width = 24;
+            this.height = 24;
+            this.x = canvas.width + 20;
+            this.y = GROUND_Y - 80 - (Math.random() * 60);
         }
+        update() { this.x -= gameSpeed; }
+        draw() {
+            let activeImg = this.type === "COIN" ? imgCoin : imgItem;
+            let isLoaded = this.type === "COIN" ? coinLoaded : itemLoaded;
 
-        class Collectible {
-            constructor() { this.width = 24; this.height = 24; this.x = canvas.width + 20; this.y = GROUND_Y - 70; }
-            update() { this.x -= gameSpeed; }
-            draw() { ctx.fillStyle = "#f1c40f"; ctx.beginPath(); ctx.arc(this.x + 12, this.y + 12, 12, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = "#ffffff"; ctx.stroke(); }
-        }
-
-        function start(speed) {
-            gameSpeed = speed;
-            document.getElementById("e").parentElement.parentElement.style.background = "transparent";
-            document.getElementById("e").parentElement.style.display = "none";
-            canvas.style.display = "block";
-            loop();
-        }
-
-        document.getElementById("e").addEventListener("click", function() { start(4); });
-        document.getElementById("m").addEventListener("click", function() { start(5.5); });
-        document.getElementById("h").addEventListener("click", function() { start(7.5); });
-
-        canvas.addEventListener("pointerdown", function(e) {
-            e.preventDefault();
-            if (gameState === "PLAYING" && (player.isGrounded || player.jumpCount < player.maxJumps)) { player.velocityY = player.jumpForce; player.jumpCount++; }
-            if (gameState === "GAMEOVER") { obstacles = []; collectibles = []; score = 0; player.y = GROUND_Y - player.height; player.velocityY = 0; gameState = "PLAYING"; }
-        });
-
-        function loop() {
-            ctx.fillStyle = "#1e272e"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "#2c3e50"; ctx.fillRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
-            ctx.fillStyle = "#00d2d3"; ctx.fillRect(0, GROUND_Y, canvas.width, 4);
-
-            if (gameState === "PLAYING") {
-                gameSpeed += 0.001; player.update(); player.draw(); score += 0.15;
-                spawnTimer--; if (spawnTimer <= 0) { obstacles.push(new Obstacle()); spawnTimer = 110 + Math.random() * 50; }
-                for (let i = obstacles.length - 1; i >= 0; i--) {
-                    obstacles[i].update(); obstacles[i].draw();
-                    if (player.x < obstacles[i].x + obstacles[i].width && player.x + player.width > obstacles[i].x && player.y < obstacles[i].y + obstacles[i].height && player.y + player.height > obstacles[i].y) { gameState = "GAMEOVER"; }
-                    if (obstacles[i].x + obstacles[i].width < 0) obstacles.splice(i, 1);
-                }
-                ctx.fillStyle = "#ffffff"; ctx.font = "bold 16px sans-serif"; ctx.fillText("SCORE: " + Math.floor(score), 20, 40);
+            if (isLoaded && activeImg.complete && activeImg.naturalWidth > 0) {
+                ctx.drawImage(activeImg, this.x, this.y, this.width, this.height);
             } else {
-                player.draw(); for (let o of obstacles) o.draw();
-                ctx.fillStyle = "rgba(0,0,0,0.85)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = "#ff6b6b"; ctx.font = "bold 38px sans-serif"; ctx.textAlign = "center"; ctx.fillText("GAME OVER", 200, 300);
-                ctx.fillStyle = "#ffffff"; ctx.font = "16px sans-serif"; ctx.fillText("Final Score: " + Math.floor(score), 200, 350);
-                ctx.fillStyle = "#a4b0be"; ctx.font = "13px sans-serif"; ctx.fillText("TAP SCREEN TO RESTART", 200, 420);
+                ctx.fillStyle = this.type === "COIN" ? "#f1c40f" : "#9b59b6";
+                ctx.beginPath();
+                ctx.arc(this.x + 12, this.y + 12, 12, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = "#ffffff";
+                ctx.stroke();
             }
-            requestAnimationFrame(loop);
         }
     }
 
-    // Force network fetch immediately
-    loadFreshGame();
-</script>
+    class Particle {
+        constructor(x, y, color) {
+            this.x = x; this.y = y; this.color = color;
+            this.radius = 2 + Math.random() * 2;
+            this.vx = (Math.random() - 0.5) * 5;
+            this.vy = (Math.random() - 0.7) * 5;
+            this.alpha = 1;
+            this.decay = 0.02 + Math.random() * 0.02;
+        }
+        update() { this.x += this.vx; this.y += this.vy; this.vy += 0.08; this.alpha -= this.decay; }
+        draw() {
+            ctx.save(); ctx.globalAlpha = this.alpha; ctx.fillStyle = this.color;
+            ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+        }
+    }
 
-</body>
-</html>
+    function createParticleBurst(x, y, color) {
+        for (let i = 0; i < 10; i++) particles.push(new Particle(x, y, color));
+    }
+
+    function manageEntities() {
+        spawnTimer--;
+        if (spawnTimer <= 0) {
+            obstacles.push(new Obstacle());
+            spawnTimer = 110 + Math.random() * 60;
+        }
+
+        for (let i = obstacles.length - 1; i >= 0; i--) {
+            obstacles[i].update(); obstacles[i].draw();
+            if (player.x < obstacles[i].x + obstacles[i].width && player.x + player.width > obstacles[i].x && player.y < obstacles[i].y + obstacles[i].height && player.y + player.height > obstacles[i].y) {
+                gameState = "GAMEOVER";
+                createParticleBurst(player.x + player.width / 2, player.y + player.height / 2, "#ff6b6b");
+                if (score > highScore) highScore = score;
+            }
+            if (obstacles[i].x + obstacles[i].width < 0) obstacles.splice(i, 1);
+        }
+
+        collectibleSpawnTimer--;
+        if (collectibleSpawnTimer <= 0) {
+            collectibles.push(new Collectible(Math.random() > 0.3 ? "COIN" : "ITEM"));
+            collectibleSpawnTimer = 130 + Math.random() * 50;
+        }
+
+        for (let i = collectibles.length - 1; i >= 0; i--) {
+            collectibles[i].update(); collectibles[i].draw();
+            if (player.x < collectibles[i].x + collectibles[i].width && player.x + player.width > collectibles[i].x && player.y < collectibles[i].y + collectibles[i].height && player.y + player.height > collectibles[i].y) {
+                let pts = collectibles[i].type === "COIN" ? 50 : 150;
+                let pCol = collectibles[i].type === "COIN" ? "#f1c40f" : "#9b59b6";
+                if (collectibles[i].type === "COIN") totalCoins++;
+                score += pts;
+                createParticleBurst(collectibles[i].x + 12, collectibles[i].y + 12, pCol);
+                scorePopups.push({ text: "+" + pts, x: player.x + player.width / 2, y: player.y - 10, alpha: 1, color: pCol });
+                collectibles.splice(i, 1);
+                continue;
+            }
+            if (collectibles[i].x + collectibles[i].width < 0) collectibles.splice(i, 1);
+        }
+
+        for (let i = particles.length - 1; i >= 0; i--) {
+            particles[i].update(); particles[i].draw();
+            if (particles[i].alpha <= 0) particles.splice(i, 1);
+        }
+
+        for (let i = scorePopups.length - 1; i >= 0; i--) {
+            scorePopups[i].y -= 0.8; scorePopups[i].alpha -= 0.025;
+            ctx.save(); ctx.globalAlpha = scorePopups[i].alpha; ctx.fillStyle = scorePopups[i].color;
+            ctx.font = "bold 14px sans-serif"; ctx.textAlign = "center";
+            ctx.fillText(scorePopups[i].text, scorePopups[i].x, scorePopups[i].y); ctx.restore();
+            if (scorePopups[i].alpha <= 0) scorePopups.splice(i, 1);
+        }
+    }
+
+    function drawBackground() {
+        let bg = "#1e272e", line = "#00d2d3";
+        if (score >= 300 && score < 700) { bg = "#4834d4"; line = "#ffbe76"; }
+        else if (score >= 700) { bg = "#0c1020"; line = "#f1c40f"; }
+        ctx.fillStyle = bg; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.fillStyle = "rgba(255, 255, 255, 0.08)";
+        for (let i = 0; i < canvas.width; i += 40) ctx.fillRect(i + 10, 100, 2, 2);
+
+        ctx.fillStyle = "#2c3e50"; ctx.fillRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
+        ctx.fillStyle = line; ctx.fillRect(0, GROUND_Y, canvas.width, 4);
+    }
+
+    function drawMainMenuScreen() {
+        ctx.fillStyle = "#111416"; 
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.fillStyle = "#00d2d3"; 
+        ctx.font = "bold 32px sans-serif"; 
+        ctx.textAlign = "center";
