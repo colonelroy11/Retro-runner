@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Arcade Loop</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Retro Runner - Arcade Port</title>
     <style>
         * {
             box-sizing: border-box;
@@ -44,6 +44,7 @@
             height: 75vh;
             max-width: 400px; 
             max-height: 680px;
+            background-color: #1a1a24;
         }
 
         canvas {
@@ -58,7 +59,6 @@
 </head>
 <body>
 
-<!-- HTML HEADER: If you see this text, the cache is successfully broken -->
 <div id="titleText">RETRO RUNNER ARCADE</div>
 
 <div id="gameContainer">
@@ -76,97 +76,205 @@
     let selectedDifficulty = 1; 
     let score = 0;
     let gameSpeed = 5;
+    let maxSpeedSetting = 15;
+    let speedIncrementSetting = 0.001;
+
     const GROUND_Y = 580;
+    const GRAVITY = 0.6;
 
     let obstacles = [];
     let collectibles = [];
+    let scorePopups = [];
+    let particles = [];
     let spawnTimer = 0;
+    let collectibleSpawnTimer = 100;
+
+    let highScore = 0;
+    let totalCoins = 0;
+
+    // ==========================================
+    // CRASH-PROOF IMAGES ASSET POOL
+    // ==========================================
+    const assets = {
+        hero: { img: null, loaded: false, src: "./hero.png" },
+        obstacle: { img: null, loaded: false, src: "./obstacle.png" },
+        coin: { img: null, loaded: false, src: "./coin.png" },
+        item: { img: null, loaded: false, src: "./item.png" }
+    };
+
+    function loadGameAssetsAsync() {
+        for (let key in assets) {
+            try {
+                const target = assets[key];
+                target.img = new Image();
+                target.img.onload = function() { target.loaded = true; };
+                target.img.src = target.src;
+            } catch (e) {}
+        }
+    }
+    loadGameAssetsAsync();
+
+    // ==========================================
+    // PLAYER CONFIGURATION
+    // ==========================================
+    const player = {
+        x: 60,
+        y: GROUND_Y - 50,
+        width: 40,
+        height: 50,
+        velocityY: 0,
+        jumpForce: -13.5,
+        isGrounded: false,
+        jumpCount: 0,
+        maxJumps: 2,
+
+        update() {
+            this.velocityY += GRAVITY;
+            this.y += this.velocityY;
+            if (this.y + this.height >= GROUND_Y) {
+                this.y = GROUND_Y - this.height;
+                this.velocityY = 0;
+                this.isGrounded = true;
+                this.jumpCount = 0;
+            } else {
+                this.isGrounded = false;
+            }
+        },
+
+        draw() {
+            if (assets.hero.loaded && assets.hero.img && assets.hero.img.naturalWidth > 0) {
+                ctx.drawImage(assets.hero.img, this.x, this.y, this.width, this.height);
+            } else {
+                ctx.fillStyle = "#00d2d3";
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+                ctx.strokeStyle = "#ffffff";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(this.x, this.y, this.width, this.height);
+            }
+        }
+    };
+
+    // ==========================================
+    // ENTITY CLASSES
+    // ==========================================
+    class Obstacle {
+        constructor() {
+            this.width = 30;
+            this.height = 40;
+            this.x = canvas.width + 20;
+            this.y = GROUND_Y - this.height;
+        }
+        update() { this.x -= gameSpeed; }
+        draw() {
+            if (assets.obstacle.loaded && assets.obstacle.img && assets.obstacle.img.naturalWidth > 0) {
+                ctx.drawImage(assets.obstacle.img, this.x, this.y, this.width, this.height);
+            } else {
+                ctx.fillStyle = "#ff6b6b";
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+                ctx.strokeStyle = "#ffffff";
+                ctx.strokeRect(this.x, this.y, this.width, this.height);
+            }
+        }
+    }
+
+    class Collectible {
+        constructor(type) {
+            this.type = type;
+            this.width = 24;
+            this.height = 24;
+            this.x = canvas.width + 20;
+            this.y = GROUND_Y - 80 - (Math.random() * 60);
+        }
+        update() { this.x -= gameSpeed; }
+        draw() {
+            let assetRef = this.type === "COIN" ? assets.coin : assets.item;
+            if (assetRef.loaded && assetRef.img && assetRef.img.naturalWidth > 0) {
+                ctx.drawImage(assetRef.img, this.x, this.y, this.width, this.height);
+            } else {
+                ctx.fillStyle = this.type === "COIN" ? "#f1c40f" : "#9b59b6";
+                ctx.beginPath();
+                ctx.arc(this.x + 12, this.y + 12, 12, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = "#ffffff";
+                ctx.stroke();
+            }
+        }
+    }
+
+    class Particle {
+        constructor(x, y, color) {
+            this.x = x; this.y = y; this.color = color;
+            this.radius = 2 + Math.random() * 2;
+            this.vx = (Math.random() - 0.5) * 5;
+            this.vy = (Math.random() - 0.7) * 5;
+            this.alpha = 1;
+            this.decay = 0.02 + Math.random() * 0.02;
+        }
+        update() { this.x += this.vx; this.y += this.vy; this.vy += 0.08; this.alpha -= this.decay; }
+        draw() {
+            ctx.save(); ctx.globalAlpha = this.alpha; ctx.fillStyle = this.color;
+            ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+        }
+    }
+
+    function createParticleBurst(x, y, color) {
+        for (let i = 0; i < 10; i++) particles.push(new Particle(x, y, color));
+    }
+
+    // ==========================================
+    // GAME ENGINE MANAGEMENT LOOPS
+    // ==========================================
+    function manageEntities() {
+        spawnTimer--;
+        if (spawnTimer <= 0) {
+            obstacles.push(new Obstacle());
+            spawnTimer = 110 + Math.random() * 60;
+        }
+
+        for (let i = obstacles.length - 1; i >= 0; i--) {
+            obstacles[i].update(); obstacles[i].draw();
+            if (player.x < obstacles[i].x + obstacles[i].width && player.x + player.width > obstacles[i].x && player.y < obstacles[i].y + obstacles[i].height && player.y + player.height > obstacles[i].y) {
+                gameState = "GAMEOVER";
+                createParticleBurst(player.x + player.width / 2, player.y + player.height / 2, "#ff6b6b");
+                if (score > highScore) highScore = score;
+            }
+            if (obstacles[i].x + obstacles[i].width < 0) obstacles.splice(i, 1);
+        }
+
+        collectibleSpawnTimer--;
+        if (collectibleSpawnTimer <= 0) {
+            collectibles.push(new Collectible(Math.random() > 0.3 ? "COIN" : "ITEM"));
+            collectibleSpawnTimer = 130 + Math.random() * 50;
+        }
+
+        for (let i = collectibles.length - 1; i >= 0; i--) {
+            collectibles[i].update(); collectibles[i].draw();
+            if (player.x < collectibles[i].x + collectibles[i].width && player.x + player.width > collectibles[i].x && player.y < collectibles[i].y + collectibles[i].height && player.y + player.height > collectibles[i].y) {
+                let pts = collectibles[i].type === "COIN" ? 50 : 150;
+                let pCol = collectibles[i].type === "COIN" ? "#f1c40f" : "#9b59b6";
+                if (collectibles[i].type === "COIN") totalCoins++;
+                score += pts;
+                createParticleBurst(collectibles[i].x + 12, collectibles[i].y + 12, pCol);
+                scorePopups.push({ text: "+" + pts, x: player.x + player.width / 2, y: player.y - 10, alpha: 1, color: pCol });
+                collectibles.splice(i, 1);
+                continue;
+            }
+            if (collectibles[i].x + collectibles[i].width < 0) collectibles.splice(i, 1);
+        }
+
+        for (let i = particles.length - 1; i >= 0; i--) {
+            particles[i].update(); particles[i].draw();
+            if (particles[i].alpha <= 0) particles.splice(i, 1);
+        }
+
+        for (let i = scorePopups.length - 1; i >= 0; i--) {
+            scorePopups[i].y -= 0.8; scorePopups[i].alpha -= 0.025;
+            ctx.save(); ctx.globalAlpha = scorePopups[i].alpha; ctx.fillStyle = scorePopups[i].color;
+            ctx.font = "bold 14px sans-serif"; ctx.textAlign = "center";
+            ctx.fillText(scorePopups[i].text, scorePopups[i].x, scorePopups[i].y); ctx.restore();
+            if (scorePopups[i].alpha <= 0) scorePopups.splice(i, 1);
+        }
+    }
 
     function drawBackground() {
-        ctx.fillStyle = "#1e272e"; 
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "#2c3e50"; 
-        ctx.fillRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
-        ctx.fillStyle = "#00d2d3"; 
-        ctx.fillRect(0, GROUND_Y, canvas.width, 4);
-    }
-
-    function drawMainMenuScreen() {
-        ctx.fillStyle = "#1e2430"; 
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        ctx.fillStyle = "#00d2d3"; 
-        ctx.font = "bold 28px sans-serif"; 
-        ctx.textAlign = "center";
-        ctx.fillText("SELECT DIFFICULTY", 200, 200);
-
-        const diffs = ["EASY", "MEDIUM", "HARD"];
-        for (let i = 0; i < diffs.length; i++) {
-            let bY = 280 + (i * 80);
-            if (i === selectedDifficulty) {
-                ctx.fillStyle = "#00d2d3";
-                ctx.fillRect(110, bY, 180, 50);
-                ctx.fillStyle = "#111416";
-            } else {
-                ctx.fillStyle = "#2c3e50";
-                ctx.fillRect(110, bY, 180, 50);
-                ctx.fillStyle = "#ffffff";
-            }
-            ctx.font = "bold 16px sans-serif";
-            ctx.fillText(diffs[i], 200, bY + 31);
-        }
-    }
-
-    function handleInputGate(clientX, clientY) {
-        const rect = canvas.getBoundingClientRect();
-        const mX = (clientX - rect.left) * (canvas.width / rect.width);
-        const mY = (clientY - rect.top) * (canvas.height / rect.height);
-
-        if (gameState === "MENU") {
-            for (let i = 0; i < 3; i++) {
-                let bY = 280 + (i * 80);
-                if (mX >= 110 && mX <= 290 && mY >= bY && mY <= bY + 50) {
-                    selectedDifficulty = i;
-                    gameSpeed = i === 0 ? 4 : (i === 1 ? 5.5 : 7.5);
-                    obstacles = []; score = 0; spawnTimer = 0;
-                    gameState = "PLAYING";
-                    return;
-                }
-            }
-        } else if (gameState === "PLAYING") {
-            gameState = "GAMEOVER";
-        } else {
-            gameState = "MENU";
-        }
-    }
-
-    canvas.addEventListener("pointerdown", function(e) {
-        e.preventDefault();
-        handleInputGate(e.clientX, e.clientY);
-    });
-
-    function gameLoop() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        if (gameState === "MENU") {
-            drawMainMenuScreen();
-        } else if (gameState === "PLAYING") {
-            drawBackground();
-            ctx.fillStyle = "#00d2d3";
-            ctx.fillRect(60, GROUND_Y - 50, 40, 50);
-            ctx.fillStyle = "#ffffff";
-            ctx.font = "bold 16px sans-serif";
-            ctx.textAlign = "left";
-            ctx.fillText("PLAYING... TAP TO DIE", 30, 50);
-        } else {
-            ctx.fillStyle = "rgba(0,0,0,0.85)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "#ff6b6b"; ctx.font = "bold 36px sans-serif"; ctx.textAlign = "center";
-            ctx.fillText("GAME OVER", 200, 300);
-            ctx.fillStyle = "#ffffff"; ctx.font = "14px sans-serif"; ctx.fillText("TAP SCREEN TO RESET", 200, 360);
-        }
-        requestAnimationFrame(gameLoop);
-    }
-    gameLoop();
-</script>
-
-</body>
-</html>
+        let bg = "#1e272e", line = "#00d2d3";
