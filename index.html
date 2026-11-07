@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Retro Runner - Complete Edition</title>
+    <title>Retro Runner - Pure Mobile Rebuild</title>
     <style>
         * {
             box-sizing: border-box;
@@ -35,7 +35,6 @@
             height: 85vh;
             max-width: 420px; 
             max-height: 740px;
-            background-color: #111416;
         }
 
         canvas {
@@ -68,10 +67,10 @@
     const GROUND_Y = canvas.height - 120;
     const GRAVITY = 0.6;
 
-    let scorePopups = [];
-    let particles = [];
     let obstacles = [];
     let collectibles = [];
+    let scorePopups = [];
+    let particles = [];
     let spawnTimer = 0;
     let collectibleSpawnTimer = 100;
 
@@ -79,28 +78,31 @@
     let totalCoins = 0;
 
     // ==========================================
-    // SAFE IMAGE LOADING WITH AUTO FALLBACKS
+    // CRITICAL: CRASH-PROOF IMAGES ASSET POOL
     // ==========================================
-    let heroLoaded = false;
-    let obstacleLoaded = false;
-    let coinLoaded = false;
-    let itemLoaded = false;
+    // Images are tracked in an isolated dictionary pool so they never crash the main engine loop thread
+    const assets = {
+        hero: { img: null, loaded: false, src: "./hero.png" },
+        obstacle: { img: null, loaded: false, src: "./obstacle.png" },
+        coin: { img: null, loaded: false, src: "./coin.png" },
+        item: { img: null, loaded: false, src: "./item.png" }
+    };
 
-    const imgPlayer = new Image();
-    imgPlayer.onload = () => { heroLoaded = true; };
-    imgPlayer.src = "./hero.png";
-
-    const imgObstacle = new Image();
-    imgObstacle.onload = () => { obstacleLoaded = true; };
-    imgObstacle.src = "./obstacle.png";
-
-    const imgCoin = new Image();
-    imgCoin.onload = () => { coinLoaded = true; };
-    imgCoin.src = "./coin.png";
-
-    const imgItem = new Image();
-    imgItem.onload = () => { itemLoaded = true; };
-    imgItem.src = "./item.png";
+    function loadGameAssetsAsync() {
+        for (let key in assets) {
+            try {
+                const target = assets[key];
+                target.img = new Image();
+                target.img.onload = function() { target.loaded = true; };
+                target.img.onerror = function() { console.log("Non-blocking skip: " + key); };
+                target.img.src = target.src;
+            } catch (e) {
+                console.log("Asset load error caught safely.");
+            }
+        }
+    }
+    // Fire image downloads completely separately from the game rendering start
+    loadGameAssetsAsync();
 
     const player = {
         x: 60,
@@ -127,9 +129,10 @@
         },
 
         draw() {
-            if (heroLoaded && imgPlayer.complete && imgPlayer.naturalWidth > 0) {
-                ctx.drawImage(imgPlayer, this.x, this.y, this.width, this.height);
+            if (assets.hero.loaded && assets.hero.img && assets.hero.img.naturalWidth > 0) {
+                ctx.drawImage(assets.hero.img, this.x, this.y, this.width, this.height);
             } else {
+                // Vector fallback box - Guaranteed to render even if image asset is delayed
                 ctx.fillStyle = "#00d2d3";
                 ctx.fillRect(this.x, this.y, this.width, this.height);
                 ctx.strokeStyle = "#ffffff";
@@ -148,8 +151,8 @@
         }
         update() { this.x -= gameSpeed; }
         draw() {
-            if (obstacleLoaded && imgObstacle.complete && imgObstacle.naturalWidth > 0) {
-                ctx.drawImage(imgObstacle, this.x, this.y, this.width, this.height);
+            if (assets.obstacle.loaded && assets.obstacle.img && assets.obstacle.img.naturalWidth > 0) {
+                ctx.drawImage(assets.obstacle.img, this.x, this.y, this.width, this.height);
             } else {
                 ctx.fillStyle = "#ff6b6b";
                 ctx.fillRect(this.x, this.y, this.width, this.height);
@@ -169,11 +172,9 @@
         }
         update() { this.x -= gameSpeed; }
         draw() {
-            let activeImg = this.type === "COIN" ? imgCoin : imgItem;
-            let isLoaded = this.type === "COIN" ? coinLoaded : itemLoaded;
-
-            if (isLoaded && activeImg.complete && activeImg.naturalWidth > 0) {
-                ctx.drawImage(activeImg, this.x, this.y, this.width, this.height);
+            let assetRef = this.type === "COIN" ? assets.coin : assets.item;
+            if (assetRef.loaded && assetRef.img && assetRef.img.naturalWidth > 0) {
+                ctx.drawImage(assetRef.img, this.x, this.y, this.width, this.height);
             } else {
                 ctx.fillStyle = this.type === "COIN" ? "#f1c40f" : "#9b59b6";
                 ctx.beginPath();
@@ -266,14 +267,3 @@
         ctx.fillStyle = "rgba(255, 255, 255, 0.08)";
         for (let i = 0; i < canvas.width; i += 40) ctx.fillRect(i + 10, 100, 2, 2);
 
-        ctx.fillStyle = "#2c3e50"; ctx.fillRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
-        ctx.fillStyle = line; ctx.fillRect(0, GROUND_Y, canvas.width, 4);
-    }
-
-    function drawMainMenuScreen() {
-        ctx.fillStyle = "#111416"; 
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        ctx.fillStyle = "#00d2d3"; 
-        ctx.font = "bold 32px sans-serif"; 
-        ctx.textAlign = "center";
