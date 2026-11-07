@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Retro Runner - Standard Edition</title>
+    <title>Retro Runner - Mobile Touch Edition</title>
     <style>
         * {
             box-sizing: border-box;
@@ -109,7 +109,6 @@
 <body>
 
 <div id="gameContainer">
-    <!-- Clean, guaranteed HTML menu overlay structure -->
     <div id="menuLayer">
         <h1 id="menuTitle">RETRO RUNNER</h1>
         <div id="menuStats">🏆 Record: <span id="hiScoreVal">0</span> | 💰 Coins: <span id="coinVal">0</span></div>
@@ -124,7 +123,6 @@
     <canvas id="gameCanvas" width="400" height="700"></canvas>
 </div>
 
-<!-- Script is locked at the absolute end to guarantee HTML loading first -->
 <script>
     window.addEventListener("DOMContentLoaded", function() {
         const canvas = document.getElementById("gameCanvas");
@@ -284,3 +282,5 @@
             }
 
             for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].update(); particles[i].draw();
+                if (particles[i].alpha <= 0) particles.splice(i, 1);
