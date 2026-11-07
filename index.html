@@ -2,14 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Retro Runner - Fixed Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retro Runner Loader</title>
     <style>
-        * {
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-        
         body {
             margin: 0;
             padding: 0;
@@ -17,283 +12,137 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            color: #ffffff;
+            height: 100vh;
             font-family: Arial, sans-serif;
-            overflow: hidden;
-            user-select: none;
-            touch-action: none;
-        }
-
-        #gameContainer {
-            position: relative;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
-            border: 2px solid #00d2d3;
-            border-radius: 8px;
-            overflow: hidden;
-            width: 92vw;
-            height: 85vh;
-            max-width: 420px; 
-            max-height: 740px;
-            background-color: #1e272e;
-        }
-
-        canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-        }
-
-        /* HTML Overlay Menu Layer */
-        #menuLayer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #111416;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 5;
-            padding: 20px;
-        }
-
-        #menuTitle {
-            color: #00d2d3;
-            font-size: 32px;
-            font-weight: bold;
-            margin: 0 0 10px 0;
-        }
-
-        #menuStats {
-            color: #f1c40f;
-            font-size: 14px;
-            margin-bottom: 30px;
-        }
-
-        #menuPrompt {
-            font-size: 16px;
-            margin-bottom: 20px;
-            font-weight: bold;
-        }
-
-        .buttonGroup {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            width: 80%;
-            max-width: 200px;
-        }
-
-        .diffButton {
-            background: #2c3e50;
-            border: 2px solid #00d2d3;
             color: #ffffff;
-            padding: 12px 20px;
-            font-size: 14px;
-            font-weight: bold;
-            border-radius: 6px;
-            cursor: pointer;
-            width: 100%;
-            text-align: center;
-            outline: none;
         }
-
-        .diffButton:active {
-            background-color: #00d2d3;
-            color: #111416;
+        #loader {
+            font-size: 18px;
+            font-weight: bold;
+            color: #00d2d3;
         }
     </style>
 </head>
 <body>
 
-<div id="gameContainer">
-    <div id="menuLayer">
-        <h1 id="menuTitle">RETRO RUNNER</h1>
-        <div id="menuStats">🏆 Record: <span id="hiScoreVal">0</span> | 💰 Coins: <span id="coinVal">0</span></div>
-        <div id="menuPrompt">SELECT DIFFICULTY:</div>
-        <div class="buttonGroup">
-            <button class="diffButton" id="btnEasy">EASY</button>
-            <button class="diffButton" id="btnMedium">MEDIUM</button>
-            <button class="diffButton" id="btnHard">HARD</button>
-        </div>
-    </div>
-    
-    <canvas id="gameCanvas" width="400" height="700"></canvas>
-</div>
+<div id="loader">Bypassing browser cache and initializing game loop...</div>
 
 <script>
-    // IMMEDIATELY RUNS CODE - REMOVED GATED LOADING CRASHERS
-    const canvas = document.getElementById("gameCanvas");
-    const ctx = canvas.getContext("2d");
-    const menuLayer = document.getElementById("menuLayer");
-
-    let gameState = "MENU"; 
-    let score = 0;
-    let gameSpeed = 5;
-    let maxSpeedSetting = 15;
-    let speedIncrementSetting = 0.001;
-
-    const GROUND_Y = canvas.height - 120;
-    const GRAVITY = 0.6;
-
-    let scorePopups = [];
-    let particles = [];
-    let obstacles = [];
-    let collectibles = [];
-    let spawnTimer = 0;
-    let collectibleSpawnTimer = 100;
-    let minSpawnInterval = 70;
-    let maxSpawnInterval = 160;
-
-    let highScore = 0;
-    let totalCoins = 0;
-
-    const player = {
-        x: 60,
-        y: GROUND_Y - 50,
-        width: 40,
-        height: 50,
-        velocityY: 0,
-        jumpForce: -13.5,
-        isGrounded: false,
-        jumpCount: 0,
-        maxJumps: 2,
-
-        update() {
-            this.velocityY += GRAVITY;
-            this.y += this.velocityY;
-            if (this.y + this.height >= GROUND_Y) {
-                this.y = GROUND_Y - this.height;
-                this.velocityY = 0;
-                this.isGrounded = true;
-                this.jumpCount = 0;
+    // This function forces the browser to pull a fresh copy directly from GitHub's servers
+    async function loadFreshGame() {
+        try {
+            // Appending a random timestamp prevents the browser from loading a cached version
+            const cacheBuster = "?t=" + new Date().getTime();
+            const response = await fetch("https://githubusercontent.com" + cacheBuster);
+            const rawHtml = await response.text();
+            
+            // Isolate the game content from this loader shell
+            if (rawHtml.includes("btnEasy")) {
+                document.open();
+                document.write(rawHtml);
+                document.close();
             } else {
-                this.isGrounded = false;
+                // Fallback to injecting the direct engine script if raw layout fails
+                loadEngineDirectly();
             }
-        },
-
-        draw() {
-            ctx.fillStyle = "#00d2d3";
-            ctx.fillRect(this.x, this.y, this.width, this.height);
-            ctx.strokeStyle = "#ffffff";
-            ctx.lineWidth = 2;
-            ctx.strokeRect(this.x, this.y, this.width, this.height);
-        }
-    };
-
-    class Obstacle {
-        constructor() {
-            this.width = 25 + Math.random() * 20;
-            this.height = 30 + Math.random() * 25;
-            this.x = canvas.width + 20;
-            this.y = GROUND_Y - this.height;
-        }
-        update() { this.x -= gameSpeed; }
-        draw() {
-            ctx.fillStyle = "#ff6b6b";
-            ctx.fillRect(this.x, this.y, this.width, this.height);
-            ctx.strokeStyle = "#ffffff";
-            ctx.lineWidth = 1.5;
-            ctx.strokeRect(this.x, this.y, this.width, this.height);
+        } catch (error) {
+            loadEngineDirectly();
         }
     }
 
-    class Collectible {
-        constructor(type) {
-            this.type = type;
-            this.width = 24;
-            this.height = 24;
-            this.x = canvas.width + 20;
-            this.y = GROUND_Y - this.height - (Math.random() > 0.5 ? 20 : 90);
-        }
-        update() { this.x -= gameSpeed; }
-        draw() {
-            ctx.fillStyle = this.type === "COIN" ? "#f1c40f" : "#9b59b6";
-            ctx.beginPath();
-            ctx.arc(this.x + 12, this.y + 12, 12, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = "#ffffff";
-            ctx.lineWidth = 1;
-            ctx.stroke();
-        }
-    }
+    function loadEngineDirectly() {
+        document.body.innerHTML = `
+            <div id="gameContainer" style="position:relative;box-shadow:0 10px 30px rgba(0,0,0,0.7);border:2px solid #00d2d3;border-radius:8px;overflow:hidden;width:92vw;height:85vh;max-width:420px;max-height:740px;background-color:#111416;margin:auto;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:20px;">
+                <h1 style="color:#00d2d3;font-size:32px;margin:0 0 10px 0;">RETRO RUNNER</h1>
+                <div style="color:#f1c40f;font-size:14px;margin-bottom:30px;">🎮 Touch Engine Active</div>
+                <div style="font-size:16px;margin-bottom:20px;font-weight:bold;">SELECT DIFFICULTY:</div>
+                <div style="display:flex;flex-direction:column;gap:12px;width:80%;max-width:200px;">
+                    <button id="e" style="background:#2c3e50;border:2px solid #00d2d3;color:#ffffff;padding:12px 20px;font-size:14px;font-weight:bold;border-radius:6px;cursor:pointer;">EASY</button>
+                    <button id="m" style="background:#2c3e50;border:2px solid #00d2d3;color:#ffffff;padding:12px 20px;font-size:14px;font-weight:bold;border-radius:6px;cursor:pointer;">MEDIUM</button>
+                    <button id="h" style="background:#2c3e50;border:2px solid #00d2d3;color:#ffffff;padding:12px 20px;font-size:14px;font-weight:bold;border-radius:6px;cursor:pointer;">HARD</button>
+                </div>
+                <canvas id="gameCanvas" width="400" height="700" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;z-index:10;"></canvas>
+            </div>
+        `;
 
-    class Particle {
-        constructor(x, y, color) {
-            this.x = x; this.y = y; this.color = color;
-            this.radius = 2 + Math.random() * 2;
-            this.vx = (Math.random() - 0.5) * 5;
-            this.vy = (Math.random() - 0.7) * 5;
-            this.alpha = 1;
-            this.decay = 0.02 + Math.random() * 0.02;
-        }
-        update() { this.x += this.vx; this.y += this.vy; this.vy += 0.08; this.alpha -= this.decay; }
-        draw() {
-            ctx.save(); ctx.globalAlpha = this.alpha; ctx.fillStyle = this.color;
-            ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fill(); ctx.restore();
-        }
-    }
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        let gameState = "PLAYING";
+        let score = 0;
+        let gameSpeed = 5;
+        const GROUND_Y = 580;
+        let obstacles = [];
+        let collectibles = [];
+        let spawnTimer = 0;
 
-    function createParticleBurst(x, y, color) {
-        for (let i = 0; i < 10; i++) particles.push(new Particle(x, y, color));
-    }
+        const player = {
+            x: 60, y: GROUND_Y - 50, width: 40, height: 50, velocityY: 0, jumpForce: -13.5, isGrounded: false, jumpCount: 0, maxJumps: 2,
+            update() {
+                this.velocityY += 0.6; this.y += this.velocityY;
+                if (this.y + this.height >= GROUND_Y) { this.y = GROUND_Y - this.height; this.velocityY = 0; this.isGrounded = true; this.jumpCount = 0; }
+                else { this.isGrounded = false; }
+            },
+            draw() { ctx.fillStyle = "#00d2d3"; ctx.fillRect(this.x, this.y, this.width, this.height); ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 2; ctx.strokeRect(this.x, this.y, this.width, this.height); }
+        };
 
-    function manageEntities() {
-        spawnTimer--;
-        let dynamicInterval = maxSpawnInterval - ((gameSpeed / maxSpeedSetting) * (maxSpawnInterval - minSpawnInterval));
-        if (spawnTimer <= 0) {
-            obstacles.push(new Obstacle());
-            spawnTimer = dynamicInterval + (Math.random() * 50);
+        class Obstacle {
+            constructor() { this.width = 30; this.height = 40; this.x = canvas.width + 20; this.y = GROUND_Y - this.height; }
+            update() { this.x -= gameSpeed; }
+            draw() { ctx.fillStyle = "#ff6b6b"; ctx.fillRect(this.x, this.y, this.width, this.height); ctx.strokeStyle = "#ffffff"; ctx.strokeRect(this.x, this.y, this.width, this.height); }
         }
 
-        for (let i = obstacles.length - 1; i >= 0; i--) {
-            obstacles[i].update(); obstacles[i].draw();
-            if (player.x < obstacles[i].x + obstacles[i].width && player.x + player.width > obstacles[i].x && player.y < obstacles[i].y + obstacles[i].height && player.y + player.height > obstacles[i].y) {
-                gameState = "GAMEOVER";
-                createParticleBurst(player.x + player.width / 2, player.y + player.height / 2, "#ff6b6b");
-            }
-            if (obstacles[i].x + obstacles[i].width < 0) obstacles.splice(i, 1);
+        class Collectible {
+            constructor() { this.width = 24; this.height = 24; this.x = canvas.width + 20; this.y = GROUND_Y - 70; }
+            update() { this.x -= gameSpeed; }
+            draw() { ctx.fillStyle = "#f1c40f"; ctx.beginPath(); ctx.arc(this.x + 12, this.y + 12, 12, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = "#ffffff"; ctx.stroke(); }
         }
 
-        collectibleSpawnTimer--;
-        if (collectibleSpawnTimer <= 0) {
-            collectibles.push(new Collectible(Math.random() > 0.25 ? "COIN" : "ITEM"));
-            collectibleSpawnTimer = 110 + Math.random() * 90;
+        function start(speed) {
+            gameSpeed = speed;
+            document.getElementById("e").parentElement.parentElement.style.background = "transparent";
+            document.getElementById("e").parentElement.style.display = "none";
+            canvas.style.display = "block";
+            loop();
         }
 
-        for (let i = collectibles.length - 1; i >= 0; i--) {
-            collectibles[i].update(); collectibles[i].draw();
-            if (player.x < collectibles[i].x + collectibles[i].width && player.x + player.width > collectibles[i].x && player.y < collectibles[i].y + collectibles[i].height && player.y + player.height > collectibles[i].y) {
-                let pts = collectibles[i].type === "COIN" ? 50 : 150;
-                let col = collectibles[i].type === "COIN" ? "#f1c40f" : "#9b59b6";
-                score += pts;
-                if (collectibles[i].type === "COIN") {
-                    totalCoins++;
-                    document.getElementById("coinVal").innerText = totalCoins;
+        document.getElementById("e").addEventListener("click", function() { start(4); });
+        document.getElementById("m").addEventListener("click", function() { start(5.5); });
+        document.getElementById("h").addEventListener("click", function() { start(7.5); });
+
+        canvas.addEventListener("pointerdown", function(e) {
+            e.preventDefault();
+            if (gameState === "PLAYING" && (player.isGrounded || player.jumpCount < player.maxJumps)) { player.velocityY = player.jumpForce; player.jumpCount++; }
+            if (gameState === "GAMEOVER") { obstacles = []; collectibles = []; score = 0; player.y = GROUND_Y - player.height; player.velocityY = 0; gameState = "PLAYING"; }
+        });
+
+        function loop() {
+            ctx.fillStyle = "#1e272e"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#2c3e50"; ctx.fillRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
+            ctx.fillStyle = "#00d2d3"; ctx.fillRect(0, GROUND_Y, canvas.width, 4);
+
+            if (gameState === "PLAYING") {
+                gameSpeed += 0.001; player.update(); player.draw(); score += 0.15;
+                spawnTimer--; if (spawnTimer <= 0) { obstacles.push(new Obstacle()); spawnTimer = 110 + Math.random() * 50; }
+                for (let i = obstacles.length - 1; i >= 0; i--) {
+                    obstacles[i].update(); obstacles[i].draw();
+                    if (player.x < obstacles[i].x + obstacles[i].width && player.x + player.width > obstacles[i].x && player.y < obstacles[i].y + obstacles[i].height && player.y + player.height > obstacles[i].y) { gameState = "GAMEOVER"; }
+                    if (obstacles[i].x + obstacles[i].width < 0) obstacles.splice(i, 1);
                 }
-                createParticleBurst(collectibles[i].x + 12, collectibles[i].y + 12, col);
-                scorePopups.push({ text: "+" + pts, x: player.x + player.width / 2, y: player.y - 10, alpha: 1, color: col });
-                collectibles.splice(i, 1);
-                continue;
+                ctx.fillStyle = "#ffffff"; ctx.font = "bold 16px sans-serif"; ctx.fillText("SCORE: " + Math.floor(score), 20, 40);
+            } else {
+                player.draw(); for (let o of obstacles) o.draw();
+                ctx.fillStyle = "rgba(0,0,0,0.85)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = "#ff6b6b"; ctx.font = "bold 38px sans-serif"; ctx.textAlign = "center"; ctx.fillText("GAME OVER", 200, 300);
+                ctx.fillStyle = "#ffffff"; ctx.font = "16px sans-serif"; ctx.fillText("Final Score: " + Math.floor(score), 200, 350);
+                ctx.fillStyle = "#a4b0be"; ctx.font = "13px sans-serif"; ctx.fillText("TAP SCREEN TO RESTART", 200, 420);
             }
-            if (collectibles[i].x + collectibles[i].width < 0) collectibles.splice(i, 1);
-        }
-
-        for (let i = particles.length - 1; i >= 0; i--) {
-            particles[i].update(); particles[i].draw();
-            if (particles[i].alpha <= 0) particles.splice(i, 1);
-        }
-
-        for (let i = scorePopups.length - 1; i >= 0; i--) {
-            scorePopups[i].y -= 0.8; scorePopups[i].alpha -= 0.025;
-            ctx.save(); ctx.globalAlpha = scorePopups[i].alpha; ctx.fillStyle = scorePopups[i].color;
-            ctx.font = "bold 14px sans-serif"; ctx.textAlign = "center";
-            ctx.fillText(scorePopups[i].text, scorePopups[i].x, scorePopups[i].y); ctx.restore();
-            if (scorePopups[i].alpha <= 0) scorePopups.splice(i, 1);
+            requestAnimationFrame(loop);
         }
     }
 
-    function drawBackground() {
+    // Force network fetch immediately
+    loadFreshGame();
+</script>
+
+</body>
+</html>
