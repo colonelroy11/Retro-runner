@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Retro Runner - Pure Mobile Rebuild</title>
+    <title>Retro Runner - Production Build 10.0</title>
     <style>
         * {
             box-sizing: border-box;
@@ -54,6 +54,7 @@
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
 
+    // Strictly force drawing resolution maps on launch
     canvas.width = 400;
     canvas.height = 700;
 
@@ -77,10 +78,7 @@
     let highScore = 0;
     let totalCoins = 0;
 
-    // ==========================================
-    // CRITICAL: CRASH-PROOF IMAGES ASSET POOL
-    // ==========================================
-    // Images are tracked in an isolated dictionary pool so they never crash the main engine loop thread
+    // Crash-proof asset management maps
     const assets = {
         hero: { img: null, loaded: false, src: "./hero.png" },
         obstacle: { img: null, loaded: false, src: "./obstacle.png" },
@@ -94,14 +92,10 @@
                 const target = assets[key];
                 target.img = new Image();
                 target.img.onload = function() { target.loaded = true; };
-                target.img.onerror = function() { console.log("Non-blocking skip: " + key); };
                 target.img.src = target.src;
-            } catch (e) {
-                console.log("Asset load error caught safely.");
-            }
+            } catch (e) {}
         }
     }
-    // Fire image downloads completely separately from the game rendering start
     loadGameAssetsAsync();
 
     const player = {
@@ -132,7 +126,6 @@
             if (assets.hero.loaded && assets.hero.img && assets.hero.img.naturalWidth > 0) {
                 ctx.drawImage(assets.hero.img, this.x, this.y, this.width, this.height);
             } else {
-                // Vector fallback box - Guaranteed to render even if image asset is delayed
                 ctx.fillStyle = "#00d2d3";
                 ctx.fillRect(this.x, this.y, this.width, this.height);
                 ctx.strokeStyle = "#ffffff";
@@ -267,3 +260,14 @@
         ctx.fillStyle = "rgba(255, 255, 255, 0.08)";
         for (let i = 0; i < canvas.width; i += 40) ctx.fillRect(i + 10, 100, 2, 2);
 
+        ctx.fillStyle = "#2c3e50"; ctx.fillRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
+        ctx.fillStyle = line; ctx.fillRect(0, GROUND_Y, canvas.width, 4);
+    }
+
+    function drawMainMenuScreen() {
+        // High-contrast deep purple fallback color to immediately verify successful launch
+        ctx.fillStyle = "#1e1e2f"; 
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.fillStyle = "#00d2d3"; 
+        ctx.font = "bold 32px sans-serif"; 
