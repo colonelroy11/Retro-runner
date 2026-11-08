@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Retro Runner - Arcade Port</title>
+    <title>Retro Runner - Arcade Edition</title>
     <style>
         * {
             box-sizing: border-box;
@@ -92,27 +92,52 @@
     let highScore = 0;
     let totalCoins = 0;
 
-    // ==========================================
-    // CRASH-PROOF IMAGES ASSET POOL
-    // ==========================================
-    const assets = {
-        hero: { img: null, loaded: false, src: "./hero.png" },
-        obstacle: { img: null, loaded: false, src: "./obstacle.png" },
-        coin: { img: null, loaded: false, src: "./coin.png" },
-        item: { img: null, loaded: false, src: "./item.png" }
-    };
-
-    function loadGameAssetsAsync() {
-        for (let key in assets) {
-            try {
-                const target = assets[key];
-                target.img = new Image();
-                target.img.onload = function() { target.loaded = true; };
-                target.img.src = target.src;
-            } catch (e) {}
+    // =========================================================================
+    // INLINE VECTOR GRAPHICS TEXTURE MAPS (BYPASSES FILE PATH CODES ENTIRELY)
+    // =========================================================================
+    // Replaces image calls with safe, hardware-accelerated local drawing paths
+    const Textures = {
+        drawHero(x, y, w, h) {
+            ctx.fillStyle = "#00d2d3";
+            ctx.fillRect(x, y, w, h);
+            // Dynamic futuristic design visor accent lines
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(x + w - 15, y + 10, 10, 8);
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x, y, w, h);
+        },
+        drawObstacle(x, y, w, h) {
+            ctx.fillStyle = "#ff6b6b";
+            ctx.fillRect(x, y, w, h);
+            // Draw neon caution details on hazards
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(x, y, w, h);
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + w, y + h);
+            ctx.stroke();
+        },
+        drawCoin(x, y, r) {
+            ctx.fillStyle = "#f1c40f";
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+        },
+        drawItem(x, y, r) {
+            ctx.fillStyle = "#9b59b6";
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
         }
-    }
-    loadGameAssetsAsync();
+    };
 
     // ==========================================
     // PLAYER CONFIGURATION
@@ -142,61 +167,39 @@
         },
 
         draw() {
-            if (assets.hero.loaded && assets.hero.img && assets.hero.img.naturalWidth > 0) {
-                ctx.drawImage(assets.hero.img, this.x, this.y, this.width, this.height);
-            } else {
-                ctx.fillStyle = "#00d2d3";
-                ctx.fillRect(this.x, this.y, this.width, this.height);
-                ctx.strokeStyle = "#ffffff";
-                ctx.lineWidth = 2;
-                ctx.strokeRect(this.x, this.y, this.width, this.height);
-            }
+            Textures.drawHero(this.x, this.y, this.width, this.height);
         }
     };
 
     // ==========================================
-    // ENTITY CLASSES
+    // ENTITY IMPLEMENTATIONS
     // ==========================================
     class Obstacle {
         constructor() {
             this.width = 30;
-            this.height = 40;
+            this.height = 40 + Math.random() * 20; // Randomize heights slightly for gameplay variety
             this.x = canvas.width + 20;
             this.y = GROUND_Y - this.height;
         }
         update() { this.x -= gameSpeed; }
         draw() {
-            if (assets.obstacle.loaded && assets.obstacle.img && assets.obstacle.img.naturalWidth > 0) {
-                ctx.drawImage(assets.obstacle.img, this.x, this.y, this.width, this.height);
-            } else {
-                ctx.fillStyle = "#ff6b6b";
-                ctx.fillRect(this.x, this.y, this.width, this.height);
-                ctx.strokeStyle = "#ffffff";
-                ctx.strokeRect(this.x, this.y, this.width, this.height);
-            }
+            Textures.drawObstacle(this.x, this.y, this.width, this.height);
         }
     }
 
     class Collectible {
         constructor(type) {
             this.type = type;
-            this.width = 24;
-            this.height = 24;
+            this.radius = 12;
             this.x = canvas.width + 20;
-            this.y = GROUND_Y - 80 - (Math.random() * 60);
+            this.y = GROUND_Y - 60 - (Math.random() * 80);
         }
         update() { this.x -= gameSpeed; }
         draw() {
-            let assetRef = this.type === "COIN" ? assets.coin : assets.item;
-            if (assetRef.loaded && assetRef.img && assetRef.img.naturalWidth > 0) {
-                ctx.drawImage(assetRef.img, this.x, this.y, this.width, this.height);
+            if (this.type === "COIN") {
+                Textures.drawCoin(this.x + this.radius, this.y + this.radius, this.radius);
             } else {
-                ctx.fillStyle = this.type === "COIN" ? "#f1c40f" : "#9b59b6";
-                ctx.beginPath();
-                ctx.arc(this.x + 12, this.y + 12, 12, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.strokeStyle = "#ffffff";
-                ctx.stroke();
+                Textures.drawItem(this.x + this.radius, this.y + this.radius, this.radius);
             }
         }
     }
@@ -221,9 +224,6 @@
         for (let i = 0; i < 10; i++) particles.push(new Particle(x, y, color));
     }
 
-    // ==========================================
-    // GAME ENGINE MANAGEMENT LOOPS
-    // ==========================================
     function manageEntities() {
         spawnTimer--;
         if (spawnTimer <= 0) {
@@ -249,17 +249,18 @@
 
         for (let i = collectibles.length - 1; i >= 0; i--) {
             collectibles[i].update(); collectibles[i].draw();
-            if (player.x < collectibles[i].x + collectibles[i].width && player.x + player.width > collectibles[i].x && player.y < collectibles[i].y + collectibles[i].height && player.y + player.height > collectibles[i].y) {
+            let size = collectibles[i].radius * 2;
+            if (player.x < collectibles[i].x + size && player.x + player.width > collectibles[i].x && player.y < collectibles[i].y + size && player.y + player.height > collectibles[i].y) {
                 let pts = collectibles[i].type === "COIN" ? 50 : 150;
                 let pCol = collectibles[i].type === "COIN" ? "#f1c40f" : "#9b59b6";
                 if (collectibles[i].type === "COIN") totalCoins++;
                 score += pts;
-                createParticleBurst(collectibles[i].x + 12, collectibles[i].y + 12, pCol);
+                createParticleBurst(collectibles[i].x + collectibles[i].radius, collectibles[i].y + collectibles[i].radius, pCol);
                 scorePopups.push({ text: "+" + pts, x: player.x + player.width / 2, y: player.y - 10, alpha: 1, color: pCol });
                 collectibles.splice(i, 1);
                 continue;
             }
-            if (collectibles[i].x + collectibles[i].width < 0) collectibles.splice(i, 1);
+            if (collectibles[i].x + size < 0) collectibles.splice(i, 1);
         }
 
         for (let i = particles.length - 1; i >= 0; i--) {
@@ -278,3 +279,8 @@
 
     function drawBackground() {
         let bg = "#1e272e", line = "#00d2d3";
+        if (score >= 300 && score < 700) { bg = "#4834d4"; line = "#ffbe76"; }
+        else if (score >= 700) { bg = "#0c1020"; line = "#f1c40f"; }
+        ctx.fillStyle = bg; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.fillStyle = "rgba(255, 255, 255, 0.08)";
